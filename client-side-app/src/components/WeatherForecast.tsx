@@ -8,6 +8,7 @@ import { WiDaySunny, WiCloudy, WiRain, WiStrongWind, WiHumidity, WiThermometer }
 import { FaCloudscale } from "react-icons/fa"
 import province from "./SelectProvince"
 import SelectProvince from "@/components/SelectProvince"
+import { prisma } from "../../prisma/prisma";
 
 interface WeatherForecastData {
   date: string
@@ -19,32 +20,54 @@ interface WeatherForecastData {
 }
 
 const WeatherForecast = (): JSX.Element => {
+  const [token, setToken] = useState<string>("");
   const [forecast, setForecast] = useState<WeatherForecastData[]>([])
   const [weatherSubOption, setWeatherSubOption] = useState<"temperature" | "wind" | "rain">("temperature")
   const [tabValue, setTabValue] = useState<number>(0)
   
-  console.log(province);
+  
+  //console.log(province);
   useEffect(() => {
     const fetchForecastData = async () => {
       try {
-        // Replace with your actual API endpoint
+        // Fetch token data from the server-side API
+        const response1 = await fetch("/api/weather/");
         
-        const response = await fetch("https://data.tmd.go.th/nwpapi/v1/forecast/area/place?domain=1&province=นครปฐม", {
-          headers:{
-            "Access-Control-Allow-Origin": "*",
-            "accept": "application/json",
-            "authorization": "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImp0aSI6IjUzN2M1Mjk3OWRlMzc3YTdkMTBlN2U1ZTk5OTMwNjRmNjY5MzI0MzA4NTJhZmMzNzg2MjQ3NmJkYjFmMTc2MTUyODcxZjMyY2M4ZGFiMjMzIn0.eyJhdWQiOiIyIiwianRpIjoiNTM3YzUyOTc5ZGUzNzdhN2QxMGU3ZTVlOTk5MzA2NGY2NjkzMjQzMDg1MmFmYzM3ODYyNDc2YmRiMWYxNzYxNTI4NzFmMzJjYzhkYWIyMzMiLCJpYXQiOjE3MzgxNTM0NjEsIm5iZiI6MTczODE1MzQ2MSwiZXhwIjoxNzY5Njg5NDYxLCJzdWIiOiIzNjg0Iiwic2NvcGVzIjpbXX0.wVw-gmt3d3DKu_zm5Xz0zCOdynlzOUP3P93TIphid5_jxpRI2a2Kh1d-imb8qJW1QZ7J5zOO8pliO0WDeJTJHZndbqs_d258sRWj_RRWiGcBhkA4OMPrFJ8kmHSJMCh4PTrbB1d-kx7m2ICof7joqjbIb4et5764IkzIstKpH5BRHn-JFwlsXjYXjb5fNSyksrK5ksARJkemxNXSvY2_vcmU7wu0mLIZ7pQbwGGBVfWXB6U4yOnL2nz4pc7hZYhsTTS4QkB5Tbb9jE-PiUe4qoUOCi8IuU2SmKwb4FwgnEZOKN8oJ76XJhgia_wSZTQ936qv6hcpq8KahQqr2CKpiXSg7If3Iyd60OM5_pD8g2YR_vr-K-zSOKF0lYl2M24SmKOuRCA8-XEOc9wIBE3wAQyNT1SskLq8NqpCZoMGx2Ip1XDdNdGZIJ5hL1VB2-ozrcbSmCPhPrt0JHTnlBFgJlKeSTa3rRe_g55xqyAMRsj2few5RgseqS31lAqXgyWKK7wVRYNbYz2klOWNbQenNNv6zFjEIHFqI382By8nn4WvDLlOlJH2aUC2x1fG-TAZXQk6V41lFN3OZu1y6P8vgJZ0NzWu10-qpfOfYoaJ-GIynNjJ_1Vk-x-aWTGFee86I4_3W0iPwzbbKQXErRYdb-KFOAhNkZhhhyd5dj2MkHo",
+        if (response1.ok) {
+          const result = await response1.json();
+          setToken(result);  // Set the token received from the server
+        } else {
+          console.error("Failed to fetch token");
+          return;  // Exit early if token fetching fails
+        }
+        console.log(token)
+
+        // If token is set, proceed with the second API call
+        if (token) {
+          const response2 = await fetch("https://data.tmd.go.th/nwpapi/v1/forecast/area/place?domain=1&province=นครปฐม", {
+            headers: {
+              "Access-Control-Allow-Origin": "*",
+              "accept": "application/json",
+              "authorization": `Bearer ${token}`,
+            }
+          });
+          
+          if (response2.ok) {
+            const data = await response2.json();
+            console.log(data);
+          } else {
+            console.error("Failed to fetch weather data");
           }
-        })
-        const data = await response.json();
-        console.log(data);
-        
+        }
+
       } catch (error) {
         console.error("Error fetching forecast data:", error);
       }
     };
-    fetchForecastData();
-  }, [])
+
+    fetchForecastData();  // Call the function to fetch data
+
+  }, []);
 
 
   const getWeatherIcon = (weather: "sunny" | "cloudy" | "rainy"): JSX.Element => {

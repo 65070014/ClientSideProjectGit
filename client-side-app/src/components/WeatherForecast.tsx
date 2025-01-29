@@ -20,7 +20,7 @@ interface WeatherForecastData {
 }
 
 const WeatherForecast = (): JSX.Element => {
-  const [token, setToken] = useState<string>("");
+  const [tokenweather, setTokenweather] = useState(null);
   const [forecast, setForecast] = useState<WeatherForecastData[]>([])
   const [weatherSubOption, setWeatherSubOption] = useState<"temperature" | "wind" | "rain">("temperature")
   const [tabValue, setTabValue] = useState<number>(0)
@@ -28,46 +28,56 @@ const WeatherForecast = (): JSX.Element => {
   
   //console.log(province);
   useEffect(() => {
-    const fetchForecastData = async () => {
+    const fetchToken = async () => {
       try {
-        // Fetch token data from the server-side API
         const response1 = await fetch("/api/weather/");
-        
-        if (response1.ok) {
-          const result = await response1.json();
-          setToken(result);  // Set the token received from the server
-        } else {
-          console.error("Failed to fetch token");
-          return;  // Exit early if token fetching fails
-        }
-        console.log(token)
 
-        // If token is set, proceed with the second API call
-        if (token) {
-          const response2 = await fetch("https://data.tmd.go.th/nwpapi/v1/forecast/area/place?domain=1&province=นครปฐม", {
-            headers: {
-              "Access-Control-Allow-Origin": "*",
-              "accept": "application/json",
-              "authorization": `Bearer ${token}`,
-            }
-          });
-          
-          if (response2.ok) {
-            const data = await response2.json();
-            console.log(data);
-          } else {
-            console.error("Failed to fetch weather data");
-          }
+        if (!response1.ok) {
+          throw new Error("Failed to fetch token");
         }
+
+        const result = await response1.json(); // No need for JSON.parse()
+        const tokenAsString = String(result.token);
+        setTokenweather(tokenAsString); // Set token
+
+        console.log("Token received:", tokenAsString); // Log the token
 
       } catch (error) {
-        console.error("Error fetching forecast data:", error);
+        console.error("Error fetching token:", error);
       }
     };
 
-    fetchForecastData();  // Call the function to fetch data
+    fetchToken(); // Call the function to fetch token
 
-  }, []);
+  }, []); // Empty dependency array to run only once on mount
+
+  // Second fetch: Get weather data using the token
+  useEffect(() => {
+    if (tokenweather) {  // Only fetch weather data if token is available
+      const fetchWeatherData = async () => {
+        try {
+          const response2 = await fetch("https://data.tmd.go.th/nwpapi/v1/forecast/area/place?domain=2&province=นครปฐม&fields=tc,rh&starttime=2025-01-30T15:00:00", {
+            headers: {
+              "Access-Control-Allow-Origin": "*",
+              "accept": "application/json",
+              "authorization": `Bearer ${tokenweather}`,
+            }
+          });
+
+          if (response2.ok) {
+            const data = await response2.json();
+            console.log(data); // Log weather data
+          } else {
+            console.error("Failed to fetch weather data");
+          }
+        } catch (error) {
+          console.error("Error fetching weather data:", error);
+        }
+      };
+
+      fetchWeatherData(); // Call the function to fetch weather data
+    }
+  }, [tokenweather]);
 
 
   const getWeatherIcon = (weather: "sunny" | "cloudy" | "rainy"): JSX.Element => {

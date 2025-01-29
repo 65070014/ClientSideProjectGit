@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 
 export async function GET(request: Request) {
   try {
-    const Token = await prisma.VerificationToken.findFirst();
+    const Token = await prisma.token.findFirst();
     console.log(Token)
 
     // Return the data as JSON response

@@ -1,18 +1,14 @@
-import NextAuth from "next-auth";
+import NextAuth, { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import GitHubProvider from "next-auth/providers/github";
-import { PrismaAdapter } from "@auth/prisma-adapter";
-import { prisma } from "../../../../../prisma/prisma";
-import { MongoDBAdapter } from "@auth/mongodb-adapter"
-import client from "../../../../lib/db"
+import { PrismaAdapter } from "@auth/prisma-adapter"; 
+import { prisma } from "../../../../../prisma/prisma"; 
+import bcrypt from "bcryptjs"; 
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: MongoDBAdapter(client),
-  providers: [],
-})
+export const authOptions: NextAuthOptions = {
 
-export const authOptions = {
+  adapter: PrismaAdapter(prisma), 
   providers: [
     CredentialsProvider({
       name: "Email & Password",
@@ -21,13 +17,24 @@ export const authOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (
-          credentials?.email === "admin@example.com" &&
-          credentials?.password === "password123"
-        ) {
-          return { id: "1", name: "Admin", email: credentials.email };
+        if (!credentials?.email || !credentials?.password) {
+          return null;
         }
-        return null;
+
+        const user = await prisma.user.findUnique({
+          where: { email: credentials.email },
+        });
+
+        if (!user) {
+          return null; 
+        }
+
+        const isValidPassword = await bcrypt.compare(credentials.password, user.password);
+        if (!isValidPassword) {
+          return null; 
+        }
+
+        return { id: user.id, name: user.name, email: user.email };
       },
     }),
     GoogleProvider({
@@ -42,7 +49,12 @@ export const authOptions = {
   pages: {
     signIn: "/login",
   },
+  session: {
+    strategy: "jwt", 
+  },
+  secret: process.env.NEXTAUTH_SECRET, 
 };
 
 const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };
+

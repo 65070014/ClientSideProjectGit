@@ -4,7 +4,7 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
-  console.log(require('crypto').randomBytes(32).toString('base64'));
+  
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
@@ -17,7 +17,7 @@ export default function LoginPage() {
     const password = formData.get("password");
 
     const result = await signIn("credentials", {
-      redirect: true,
+      redirect: false,
       email,
       password,
     });

@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader} from "@mui/material"
 import { Tabs, Tab, Box } from "@mui/material"
 import { WiDaySunny, WiCloudy, WiRain, WiStrongWind, WiHumidity, WiThermometer } from "react-icons/wi"
 import { FaCloudscale } from "react-icons/fa"
-import { xml2js } from "xml2js";
 import province from "./SelectProvince"
 import SelectProvince from "@/components/SelectProvince"
 
@@ -24,45 +23,22 @@ const WeatherForecast = (): JSX.Element => {
   const [weatherSubOption, setWeatherSubOption] = useState<"temperature" | "wind" | "rain">("temperature")
   const [tabValue, setTabValue] = useState<number>(0)
   
+  console.log(province);
   useEffect(() => {
     const fetchForecastData = async () => {
       try {
         // Replace with your actual API endpoint
-        const response = await fetch("https://data.tmd.go.th/api/WeatherForecast7Days/v2/?uid=api&ukey=api12345", {
-          method: "GET", // Specify the method
-          headers: {
-              // Add headers if necessary (for example, Content-Type)
-              // "Content-Type": "application/json",
-          },
-          mode: "no-cors", // This sets the request to no-cors mode
-        });
-        const xmlText = await response.text();
-        xml2js.parseString(xmlText, { mergeAttrs: true }, (err: any, result: any) => {
-          if (err) {
-            console.error("Error parsing XML", err);
-            return;
+        
+        const response = await fetch("https://data.tmd.go.th/nwpapi/v1/forecast/area/place?domain=1&province=นครปฐม", {
+          headers:{
+            "Access-Control-Allow-Origin": "*",
+            "accept": "application/json",
+            "authorization": "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImp0aSI6IjUzN2M1Mjk3OWRlMzc3YTdkMTBlN2U1ZTk5OTMwNjRmNjY5MzI0MzA4NTJhZmMzNzg2MjQ3NmJkYjFmMTc2MTUyODcxZjMyY2M4ZGFiMjMzIn0.eyJhdWQiOiIyIiwianRpIjoiNTM3YzUyOTc5ZGUzNzdhN2QxMGU3ZTVlOTk5MzA2NGY2NjkzMjQzMDg1MmFmYzM3ODYyNDc2YmRiMWYxNzYxNTI4NzFmMzJjYzhkYWIyMzMiLCJpYXQiOjE3MzgxNTM0NjEsIm5iZiI6MTczODE1MzQ2MSwiZXhwIjoxNzY5Njg5NDYxLCJzdWIiOiIzNjg0Iiwic2NvcGVzIjpbXX0.wVw-gmt3d3DKu_zm5Xz0zCOdynlzOUP3P93TIphid5_jxpRI2a2Kh1d-imb8qJW1QZ7J5zOO8pliO0WDeJTJHZndbqs_d258sRWj_RRWiGcBhkA4OMPrFJ8kmHSJMCh4PTrbB1d-kx7m2ICof7joqjbIb4et5764IkzIstKpH5BRHn-JFwlsXjYXjb5fNSyksrK5ksARJkemxNXSvY2_vcmU7wu0mLIZ7pQbwGGBVfWXB6U4yOnL2nz4pc7hZYhsTTS4QkB5Tbb9jE-PiUe4qoUOCi8IuU2SmKwb4FwgnEZOKN8oJ76XJhgia_wSZTQ936qv6hcpq8KahQqr2CKpiXSg7If3Iyd60OM5_pD8g2YR_vr-K-zSOKF0lYl2M24SmKOuRCA8-XEOc9wIBE3wAQyNT1SskLq8NqpCZoMGx2Ip1XDdNdGZIJ5hL1VB2-ozrcbSmCPhPrt0JHTnlBFgJlKeSTa3rRe_g55xqyAMRsj2few5RgseqS31lAqXgyWKK7wVRYNbYz2klOWNbQenNNv6zFjEIHFqI382By8nn4WvDLlOlJH2aUC2x1fG-TAZXQk6V41lFN3OZu1y6P8vgJZ0NzWu10-qpfOfYoaJ-GIynNjJ_1Vk-x-aWTGFee86I4_3W0iPwzbbKQXErRYdb-KFOAhNkZhhhyd5dj2MkHo",
           }
-
-          // Find the province data
-          const provinceData = result.Province.find((item: any) => item.ProvinceNameThai[0] === province);
-
-          if (provinceData) {
-            const forecast = provinceData.SevenDaysForecast[0].ForecastDate.map((forecast: any) => ({
-              date: forecast[0],
-              temperature: forecast.MaximumTemperature[0]._,
-              windSpeed: forecast.WindSpeed[0],
-              rainChance: forecast.PercentRainCover[0],
-              pm25: Math.round(Math.random() * 150),
-              weather: forecast.DescriptionThai[0],
-              
-            }));
-
-            // Set the forecast data (take the first 5 days)
-            setForecast(forecast.slice(0, 5));
-          } else {
-            console.error("Province not found in the data");
-          }
-        });
+        })
+        const data = await response.json();
+        console.log(data);
+        
       } catch (error) {
         console.error("Error fetching forecast data:", error);
       }

@@ -29,6 +29,9 @@ export const authOptions: NextAuthOptions = {
           return null; 
         }
 
+        if (!user.password) {
+          return null;
+        }
         const isValidPassword = await bcrypt.compare(credentials.password, user.password);
         if (!isValidPassword) {
           return null; 
@@ -41,11 +44,8 @@ export const authOptions: NextAuthOptions = {
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
-    GitHubProvider({
-      clientId: process.env.GITHUB_CLIENT_ID!,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
-    }),
   ],
+  
   pages: {
     signIn: "/login",
   },

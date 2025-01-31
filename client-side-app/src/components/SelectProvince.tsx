@@ -1,10 +1,13 @@
-import React, { useState } from "react"
-import { Typography, Select, MenuItem, InputLabel, FormControl, IconButton } from "@mui/material"
+import { Typography, Select, MenuItem, FormControl } from "@mui/material"
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
 
+type Props = {
+  province: string;
+  setProvince: React.Dispatch<React.SetStateAction<string>>;
+};
 
-const ProvinceSelector = () => {
-  const [province, setProvince] = useState<string>("กรุงเทพมหานคร") // Initial province
+
+const ProvinceSelector: React.FC<Props> =  ({ province, setProvince }) => {
 
   const provinces = [
   'กระบี่', 'กรุงเทพมหานคร', 'กาญจนบุรี', 'กาฬสินธุ์', 'กำแพงเพชร',

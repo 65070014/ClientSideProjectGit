@@ -6,7 +6,7 @@ export async function GET() {
   try {
     const Token = await prisma.token.findFirst({
       where: {
-        type: "weather",
+        type: "PM",
       },
     });
     

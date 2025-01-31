@@ -8,6 +8,7 @@ generator client {
 }
 model Token{
   id            String          @id @default(auto()) @map("_id") @db.ObjectId
+  type          String?
   token         String?
 }
  

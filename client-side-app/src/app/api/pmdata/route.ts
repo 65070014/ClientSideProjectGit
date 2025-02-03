@@ -1,22 +1,40 @@
-// pages/api/proxy-pm.js
-import fetch from 'node-fetch';
+import { PrismaClient } from "@prisma/client";
 
-export default async function handler(req, res) {
+const prisma = new PrismaClient();
+
+export async function GET(req:Request) {
+  const Token = await prisma.token.findFirst({
+      where: {
+        type: "PM",
+      },
+    });
   // Get query parameters
-  const { lat, lon, tokenPm } = req.query;
+  const { searchParams } = new URL(req.url);
+  const lat = searchParams.get("lat");
+  const lon = searchParams.get("lon");
 
-  // The API URL to fetch data from the third-party API
-  const pmAPI = `https://api.waqi.info/feed/geo:${lat};${lon}/?token=${tokenPm}`;
+
+  const pmAPI = `https://api.waqi.info/feed/geo:${lat};${lon}/?token=${Token?.token}`;
 
   try {
-    // Fetch data from the third-party API
     const response = await fetch(pmAPI);
     const data = await response.json();
 
+    return new Response(JSON.stringify(data), {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
     // Send the response data back to the frontend
-    res.status(200).json(data);
   } catch (error) {
     console.error('Error fetching data:', error);
-    res.status(500).json({ message: 'Error fetching data' });
+    return new Response("Error fetching data"), {
+      status: 500,
+      headers: {},
+    };
   }
 }
+
+

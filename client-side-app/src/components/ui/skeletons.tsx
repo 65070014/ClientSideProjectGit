@@ -58,3 +58,31 @@ export function WeatherSkeleton() {
       </div>
     );
   }
+  export function MapSkeleton() {
+    return (
+      <div style={{ width: '100%', height: '420px', backgroundColor: '#f0f0f0', position: 'relative' }}>
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            background: 'linear-gradient(90deg, rgba(255, 255, 255, 0.8) 25%, rgba(200, 200, 200, 0.8) 50%, rgba(255, 255, 255, 0.8) 75%)',
+            animation: 'loading 1.5s infinite linear',
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            color: '#888',
+          }}
+        >
+          <span>กำลังโหลดแผนที่...</span>
+        </div>
+      </div>
+    );
+  };

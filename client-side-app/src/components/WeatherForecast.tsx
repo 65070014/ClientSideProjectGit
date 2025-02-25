@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, JSX } from "react";
+import React, { useState, useEffect } from "react";
 import { WeatherSkeleton, AirQualitySkeleton } from "@/components/ui/skeletons";
 import { Card, CardContent, CardHeader } from "@mui/material";
 import { Tabs, Tab, Box } from "@mui/material";
@@ -15,37 +15,17 @@ import {
   ForecastData
 } from './ui/Forecast/forecastUtils';
 
-const WeatherForecast = (): JSX.Element => {
-  const [tokenweather, setTokenweather] = useState<string>("");
+type Props = {
+  tokenweather: string;
+};
+
+const WeatherForecast: React.FC<Props> = ({ tokenweather }) => {
   const [forecast, setForecast] = useState<WeatherForecastData[]>([])
   const [tabValue, setTabValue] = useState<number>(0)
   const [province, setProvince] = useState<string>("กรุงเทพมหานคร")
   const [loadingWeather, setLoadingWeather] = useState<boolean>(true);
   const [loadingPm, setLoadingPm] = useState<boolean>(true);
-
-  useEffect(() => {
-    const fetchToken = async () => {
-      try {
-        const response1 = await fetch("/api/weathertoken/");
-
-        if (!response1.ok) {
-          throw new Error("Failed to fetch token");
-        }
-
-        const result = await response1.json();
-        const tokenAsString = String(result.token);
-        setTokenweather(tokenAsString); // Set token
-      } catch (error) {
-        console.error("Error fetching token:", error);
-      } finally {
-        setLoadingWeather(false);
-      }
-    };
-
-    fetchToken();
-
-  }, []);
-
+  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
   useEffect(() => {
     if (tokenweather) {
@@ -57,18 +37,20 @@ const WeatherForecast = (): JSX.Element => {
         const maxRetries = 3;
 
         try {
+          await delay(1000);
           const now = new Date();
 
           // Loop for 6 days (including today and the next 5 days)
           for (let i = 0; i < 6; i++) {
             const forecastDate = new Date(now);
             forecastDate.setDate(now.getDate() + i);  // Add i days to the current date
-            forecastDate.setUTCHours(forecastDate.getUTCHours() + 4+retries); // Add 4 hours to the UTC time
+            forecastDate.setUTCHours(forecastDate.getUTCHours() + 4 + retries); // Add 4 hours to the UTC time
 
             // Format the date to ISO string format "yyyy-mm-dd"
             let forecastDateStr = forecastDate.toISOString().split(".")[0];
             const dateAndHour = forecastDateStr.slice(0, 13);
 
+            
             let weatherAPI = `https://data.tmd.go.th/nwpapi/v1/forecast/area/place?domain=1&province=${province}&fields=tc,rh,cond,ws10m,cloudlow,cloudmed,cloudhigh,rain&starttime=${dateAndHour}:00:00`;
 
             let success = false;
@@ -137,24 +119,26 @@ const WeatherForecast = (): JSX.Element => {
 
   useEffect(() => {
     const fetchPmData = async () => {
-      setLoadingPm(true);
-      let forcastdata = (forecast[0]);
-      const lat = forcastdata.lat;
-      const lon = forcastdata.lon;
-      const response2Pm = await fetch(`/api/pmdata?lat=${lat}&lon=${lon}`);
-      if (response2Pm.ok) {
-        const pmdata = await response2Pm.json();
-        for (let i = 0; i < forecast.length; i++) {
-          if (i == 0) {
-            forcastdata.pm25 = pmdata.data.aqi
-          } else {
-            forcastdata = forecast[i];
-            const forcast: ForecastData[] = pmdata.data.forecast.daily.pm25;
-            const foundData = forcast.find(item => item.day === revertThaiDateToNormalDate(forcastdata.date));
-            forecast[i].pm25 = foundData?.avg ?? 0
+      if (forecast.length > 0) {
+        setLoadingPm(true);
+        let forcastdata = (forecast[0]);
+        const lat = forcastdata.lat;
+        const lon = forcastdata.lon;
+        const response2Pm = await fetch(`/api/pmdata?lat=${lat}&lon=${lon}`);
+        if (response2Pm.ok) {
+          const pmdata = await response2Pm.json();
+          for (let i = 0; i < forecast.length; i++) {
+            if (i == 0) {
+              forcastdata.pm25 = pmdata.data.aqi
+            } else {
+              forcastdata = forecast[i];
+              const forcast: ForecastData[] = pmdata.data.forecast.daily.pm25;
+              const foundData = forcast.find(item => item.day === revertThaiDateToNormalDate(forcastdata.date));
+              forecast[i].pm25 = foundData?.avg ?? 0
+            }
           }
+          setLoadingPm(false);
         }
-        setLoadingPm(false);
       }
     }
     fetchPmData()

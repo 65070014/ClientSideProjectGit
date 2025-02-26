@@ -60,9 +60,10 @@ export function WeatherSkeleton() {
   }
   type Props = {
     apilimit: boolean
+    loading_number : number
   };
 
-  export const MapSkeleton: React.FC<Props> = ({ apilimit }) =>{
+  export const MapSkeleton: React.FC<Props> = ({ apilimit, loading_number }) =>{
     return (
       <div style={{ width: '100%', height: '420px', backgroundColor: '#f0f0f0', position: 'relative' }}>
         <div
@@ -85,7 +86,7 @@ export function WeatherSkeleton() {
             color: apilimit ? 'red' : '#888', // Change color based on api limit
           }}
         >
-          <span>{apilimit ? 'การเรียก api เกิดกำหนด' : 'กำลังโหลดแผนที่...'}</span>
+          <span>{apilimit ? 'การเรียก api เกินกำหนด' : `กำลังโหลดแผนที่... ${loading_number}/77`}</span>
         </div>
       </div>
     );

@@ -29,17 +29,17 @@ const calculateColor = (value: number, min: number, max: number, type: string): 
   let r, g, b;
 
   switch (type) {
-    case "Temp": // อุณหภูมิ (ฟ้า → เหลือง → ส้ม)
+    case "Temp":
       if (scaledValue < 0.5) {
         // ฟ้า → เหลือง
-        r = Math.round(scaledValue * 510); // 0 → 255 (ฟ้า → เหลือง)
+        r = Math.round(scaledValue * (255 / 0.5));  // 0 → 255
         g = 255;
-        b = Math.round(255 - scaledValue * 510); // 255 → 0 (ฟ้า → เหลือง)
+        b = Math.round(255 - scaledValue * (255 / 0.5)); // 255 → 0
       } else {
         // เหลือง → ส้ม
-        r = 255; // ค่าของสีแดงจะคงที่ที่ 255 (สีส้ม)
-        g = Math.round(255 - (scaledValue - 0.5) * 510); // 255 → 0 (เหลือง → ส้ม)
-        b = 0; // ไม่มีสีฟ้าในช่วงนี้
+        r = 255;
+        g = Math.round(255 - (scaledValue - 0.5) * (255 / 0.5)); // 255 → 0
+        b = 0;
       }
       break;
 
@@ -82,13 +82,15 @@ const ThailandMap: React.FC<Props> = ({ tokenweather, weatherSubOption, tabValue
   const [mapType, setMapType] = useState<number>(0);
   const [apiLimit, setApiLimit] = useState<boolean>(false);
   const [provincesColorMap, setProvincesColorMap] = useState<{ [key: string]: string[] }>({});
+  const [isDataReady, setIsDataReady] = useState(false);
+  const [loading_number, setLoadingNumber] = useState<number>(0);
   const provincesGroup1 = provinces.slice(0, 11);
   const provincesGroup2 = provinces.slice(11, 22);
   const provincesGroup3 = provinces.slice(22, 33);
   const provincesGroup4 = provinces.slice(33, 44);
   const provincesGroup5 = provinces.slice(44, 55);
   const provincesGroup6 = provinces.slice(55, 66);
-  const provincesGroup7 = provinces.slice(77);
+  const provincesGroup7 = provinces.slice(66);
   const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
   // ฟังก์ชันเพื่อเรียก API สำหรับแต่ละจังหวัด
@@ -132,6 +134,7 @@ const ThailandMap: React.FC<Props> = ({ tokenweather, weatherSubOption, tabValue
             Rain: calculateRainChance(forecast.rh, forecast.cloudlow, forecast.cloudmed, forecast.cloudhigh, forecast.tc, forecast.ws10m, forecast.rain),
             Humidity: forecast.rh,
           };
+          setLoadingNumber(prev => prev + 1)
           const lat = data.WeatherForecasts[0].location.lat
           const lon = data.WeatherForecasts[0].location.lon
           const response2Pm = await fetch(`/api/pmdata?lat=${lat}&lon=${lon}`);
@@ -145,12 +148,11 @@ const ThailandMap: React.FC<Props> = ({ tokenweather, weatherSubOption, tabValue
             PM: pmData,
           };
         } else {
-          console.log(response2)
           throw new Error("API response not ok");
         }
       } catch (error) {
-          setApiLimit(true)
-          console.log(error)
+        setApiLimit(true)
+        console.log(error)
       }
 
     } catch (error) {
@@ -163,7 +165,7 @@ const ThailandMap: React.FC<Props> = ({ tokenweather, weatherSubOption, tabValue
 
   // ฟังก์ชันสำหรับดึงข้อมูลสภาพอากาศทุกจังหวัด
   const fetchAllWeatherData = async () => {
-    const tempColorMap: { [key: string]: string[] } = {};
+    const tempColorMap: { [key: string]: string[] } = {}; // สร้าง object ใหม่
 
     const fetchGroupData = async (provinceList: string[], apiKey: string) => {
       for (const province of provinceList) {
@@ -173,7 +175,6 @@ const ThailandMap: React.FC<Props> = ({ tokenweather, weatherSubOption, tabValue
         }
 
         const data = await fetchWeatherData(province, apiKey);
-        console.log(province)
         if (data) {
           tempColorMap[province] = [
             calculateColor(data.Temp, 0, 60, "Temp"),
@@ -185,6 +186,7 @@ const ThailandMap: React.FC<Props> = ({ tokenweather, weatherSubOption, tabValue
         }
       }
     };
+
     await Promise.all([
       fetchGroupData(provincesGroup1, tokenweather[1]),
       fetchGroupData(provincesGroup2, tokenweather[2]),
@@ -193,10 +195,22 @@ const ThailandMap: React.FC<Props> = ({ tokenweather, weatherSubOption, tabValue
       fetchGroupData(provincesGroup5, tokenweather[5]),
       fetchGroupData(provincesGroup6, tokenweather[6]),
       fetchGroupData(provincesGroup7, tokenweather[7]),
-    ])
-    setProvincesColorMap(tempColorMap);
+    ]);
+
+    setProvincesColorMap(prevMap => ({ ...prevMap, ...tempColorMap })); // ✅ อัปเดต state หลัง loop เสร็จ
+    console.log("Updated provincesColorMap:", tempColorMap);
     setLoading(false);
   };
+
+  // ตรวจสอบว่าค่าเปลี่ยนแปลงจริงไหม
+
+
+  useEffect(() => {
+    console.log(Object.keys(provincesColorMap).length, provinces.length)
+    if (Object.keys(provincesColorMap).length === provinces.length) {
+      setIsDataReady(true);
+    }
+  }, [provincesColorMap]);
 
   // เรียกใช้งาน fetchAllWeatherData เมื่อคอมโพเนนต์โหลด
   useEffect(() => {
@@ -246,8 +260,8 @@ const ThailandMap: React.FC<Props> = ({ tokenweather, weatherSubOption, tabValue
 
   return (
     <div>
-      {loading || apiLimit ? (
-        <MapSkeleton apilimit={apiLimit} />
+      {loading || !isDataReady || apiLimit ? (
+        <MapSkeleton apilimit={apiLimit} loading_number={loading_number} />
       ) : (
         <ComposableMap
           projection="geoMercator"

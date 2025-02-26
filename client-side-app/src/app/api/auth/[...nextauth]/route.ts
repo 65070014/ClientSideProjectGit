@@ -1,14 +1,13 @@
 import NextAuth, { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
-import GitHubProvider from "next-auth/providers/github";
-import { PrismaAdapter } from "@auth/prisma-adapter"; 
-import { prisma } from "../../../../../prisma/prisma"; 
-import bcrypt from "bcryptjs"; 
+import { PrismaAdapter } from "@next-auth/prisma-adapter";
+import { prisma } from "../../../../../prisma/prisma";
+import bcrypt from "bcryptjs";
+
 
 export const authOptions: NextAuthOptions = {
-
-  adapter: PrismaAdapter(prisma), 
+  adapter: PrismaAdapter(prisma),
   providers: [
     CredentialsProvider({
       name: "Email & Password",
@@ -26,18 +25,22 @@ export const authOptions: NextAuthOptions = {
         });
 
         if (!user) {
-          return null; 
+          return null;
         }
 
         if (!user.password) {
           return null;
         }
+
+
         const isValidPassword = await bcrypt.compare(credentials.password, user.password);
         if (!isValidPassword) {
-          return null; 
+          return null;
         }
 
-        return { id: user.id, name: user.name, email: user.email };
+        // Return user data which will be availabl e in theJWT token
+        return { id: user.id, username: user.username ?? "", email: user.email, role: user.role ?? "USER" };
+
       },
     }),
     GoogleProvider({
@@ -45,16 +48,38 @@ export const authOptions: NextAuthOptions = {
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
   ],
-  
+
+  // Define custom pages if needed
   pages: {
     signIn: "/login",
+  }, session: {
+    strategy: "jwt",
   },
-  session: {
-    strategy: "jwt", 
+
+
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.username = user.username;
+        token.role = user.role;
+      }
+      return token;
+    },
+    async session({ session, user, token }) {
+      return {
+        ...session,
+        user: {
+          ...session.user,
+          id: token.id as string,
+          name: token.username as string,
+          email: token.email as string,
+          role: token.role as string
+        }
+      };
+    },
   },
-  secret: process.env.NEXTAUTH_SECRET, 
+  secret: process.env.NEXTAUTH_SECRET,
 };
 
 const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };
-

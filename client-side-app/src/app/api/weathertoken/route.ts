@@ -9,7 +9,7 @@ export async function GET() {
         type: "weather",
       },
     });
-    
+
     console.log(Token)
 
     // Return the data as JSON response

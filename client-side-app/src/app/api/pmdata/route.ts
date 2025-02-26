@@ -14,7 +14,7 @@ export async function GET(req:Request) {
   const lon = searchParams.get("lon");
 
 
-  const pmAPI = `https://api.waqi.info/feed/geo:${lat};${lon}/?token=${Token?.token}`;
+  const pmAPI = `https://api.waqi.info/feed/geo:${lat};${lon}/?token=${Token?.token[0]}`;
 
   try {
     const response = await fetch(pmAPI);

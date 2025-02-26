@@ -45,7 +45,7 @@ export default function SignupForm() {
   });
 
   const [errors, setErrors] = useState<Errors>({});
-  
+
   const onSubmit = async (formData: FormData) => {
     try {
       const response = await fetch("/api/register/", {
@@ -65,7 +65,7 @@ export default function SignupForm() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100">
+    <div className="flex flex-col min-h-screen items-center justify-center bg-gray-100 text-center">
       <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-md">
         <h2 className="text-2xl font-semibold text-center">Sign Up</h2>
 
@@ -116,6 +116,12 @@ export default function SignupForm() {
           </button>
         </form>
       </div>
+      <p className="text-gray-500 text-sm">
+        Have an account already?{" "}
+        <a href="/login" className="text-gray-400 hover:text-gray-600">Login</a>
+      </p>
     </div>
+
+
   );
 }

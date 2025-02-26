@@ -1,7 +1,7 @@
 "use client"; 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { redirect, useRouter } from "next/navigation";
 
 
 export default function LoginPage() {
@@ -69,10 +69,10 @@ export default function LoginPage() {
             Login with Google
           </button>
           <button
-            onClick={() => signIn("github")}
-            className="w-full bg-gray-800 text-white py-2 rounded-lg"
+            onClick={() => redirect("/register")}
+            className="w-full bg-black text-white py-2 rounded-lg mt-2"
           >
-            Login with GitHub
+            Sign Up
           </button>
         </div>
       </div>

@@ -82,17 +82,20 @@ const ThailandMap: React.FC<Props> = ({ tokenweather, weatherSubOption, tabValue
   const [mapType, setMapType] = useState<number>(0);
   const [apiLimit, setApiLimit] = useState<boolean>(false);
   const [provincesColorMap, setProvincesColorMap] = useState<{ [key: string]: string[] }>({});
-  const provincesGroup1 = provinces.slice(0, 19);
-  const provincesGroup2 = provinces.slice(19,38);
-  const provincesGroup3 = provinces.slice(38,57);
-  const provincesGroup4 = provinces.slice(57);
+  const provincesGroup1 = provinces.slice(0, 11);
+  const provincesGroup2 = provinces.slice(11, 22);
+  const provincesGroup3 = provinces.slice(22, 33);
+  const provincesGroup4 = provinces.slice(33, 44);
+  const provincesGroup5 = provinces.slice(44, 55);
+  const provincesGroup6 = provinces.slice(55, 66);
+  const provincesGroup7 = provinces.slice(77);
   const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
   // ฟังก์ชันเพื่อเรียก API สำหรับแต่ละจังหวัด
   const fetchWeatherData = async (province: string, apiKey: string) => {
-    await delay(500);
 
     try {
+      await delay(7000)
       const now = new Date();
       const forecastDate = new Date(now);
       forecastDate.setDate(now.getDate());
@@ -141,19 +144,13 @@ const ThailandMap: React.FC<Props> = ({ tokenweather, weatherSubOption, tabValue
             ...weatherData,
             PM: pmData,
           };
-        }
-        else if (response2.status == 429) {
-          setApiLimit(true)
         } else {
           console.log(response2)
           throw new Error("API response not ok");
         }
       } catch (error) {
-        if (error.response && error.response.status === 429) {
           setApiLimit(true)
-        } else {
-          setApiLimit(true)
-        }
+          console.log(error)
       }
 
     } catch (error) {
@@ -193,6 +190,9 @@ const ThailandMap: React.FC<Props> = ({ tokenweather, weatherSubOption, tabValue
       fetchGroupData(provincesGroup2, tokenweather[2]),
       fetchGroupData(provincesGroup3, tokenweather[3]),
       fetchGroupData(provincesGroup4, tokenweather[4]),
+      fetchGroupData(provincesGroup5, tokenweather[5]),
+      fetchGroupData(provincesGroup6, tokenweather[6]),
+      fetchGroupData(provincesGroup7, tokenweather[7]),
     ])
     setProvincesColorMap(tempColorMap);
     setLoading(false);

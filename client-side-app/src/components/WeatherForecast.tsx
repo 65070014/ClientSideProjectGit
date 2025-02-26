@@ -52,7 +52,6 @@ const WeatherForecast: React.FC<Props> = ({ tokenweather, weatherSubOption, tabV
 
             const weatherAPI = `https://data.tmd.go.th/nwpapi/v1/forecast/area/place?domain=1&province=${province}&fields=tc,rh,cond,ws10m,cloudlow,cloudmed,cloudhigh,rain&starttime=${dateAndHour}:00:00&endtime=${endDateAndHour}:00:00`;
 
-            let success = false;
             try {
               // Call the API with the specific date
               const response2 = await fetch(weatherAPI, {
@@ -80,7 +79,6 @@ const WeatherForecast: React.FC<Props> = ({ tokenweather, weatherSubOption, tabV
                 };
 
                 forecastData.push(forecastItem);
-                success = true;
               } else {
                 throw new Error("API response not ok");
               }

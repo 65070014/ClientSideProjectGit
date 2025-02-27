@@ -33,18 +33,33 @@ export default function ProfilePage() {
 
 
     async function onSubmit(data: any) {
-        const res = await fetch("/api/change-profile/", {
+        console.log("Data to send:", data); // ✅ ตรวจสอบว่าข้อมูลถูกต้องก่อนส่ง
+
+        const res = await fetch("/api/change-profile", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(data),
         });
+
+        const responseData = await res.json();
+        console.log("Response:", responseData); // ✅ ตรวจสอบ response ที่ได้กลับมา
+
         if (res.ok) {
             setMessage("Profile updated successfully!");
-            update(); // Update session
+            await update({
+                user: {
+                    ...session?.user,
+                    username: data.username, // อัปเดตชื่อใหม่
+                },
+            });
         } else {
-            setMessage("Update failed!");
+            setMessage(`Update failed: ${responseData.message}`);
         }
     }
+
+
+
+
 
     async function onSubmitPassword(data: any) {
         const res = await fetch("/api/change-password/", {
@@ -53,11 +68,13 @@ export default function ProfilePage() {
             body: JSON.stringify(data),
         });
 
+        const response = await res.json();
+
         if (res.ok) {
-            setMessage("Password updated successfully!");
-            update(); // Update session
+            setMessage(response.message);
+            await update(); // 🔄 อัปเดต session (ถ้าใช้ JWT อาจต้อง logout)
         } else {
-            setMessage("Update failed!");
+            setMessage(response.message);
         }
     }
     useEffect(() => {
@@ -70,12 +87,12 @@ export default function ProfilePage() {
             {session && session.user ? (
                 session.user.role === 'USER' ? (
                     <>
-                        <p className="text-center mb-4">Welcome, {session.user.name}!</p>
+                        <p className="text-center mb-4">Welcome, {session.user.username}!</p>
                         <form onSubmit={handleSubmit(onSubmit)} className="mt-4">
                             <input
                                 type="text"
                                 {...register("username")}
-                                defaultValue={session.user.name || ""}
+                                defaultValue={session.user.username || ""}
                                 placeholder="Username"
                                 className="w-full px-3 py-2 border rounded-lg mb-3"
                             />
@@ -103,7 +120,7 @@ export default function ProfilePage() {
                     </>
                 ) : session.user.role === 'ADMIN' ? (
                     <>
-                        <p className="text-center mb-4">Admin Panel: {session.user.name}</p>
+                        <p className="text-center mb-4">Admin Panel: {session.user.username}</p>
                         <div className="bg-gray-100 p-4 rounded-lg">
                             <h3 className="text-xl font-bold mb-3">Admin Controls</h3>
 

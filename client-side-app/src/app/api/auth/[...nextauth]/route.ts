@@ -60,18 +60,35 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.username = user.username;
+        token.username = user.username; // ✅ บันทึก username ใหม่ใน token
         token.role = user.role;
+        token.password = user.password; 
       }
+  
+      // ✅ เช็คว่า token มี user ID ไหม แล้วดึงค่าล่าสุดจาก DB
+      if (token.sub) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.sub }, // ค้นหาจาก user ID
+        });
+  
+        if (dbUser) {
+          token.username = dbUser.username; // ✅ อัปเดตค่าล่าสุด
+          token.password = dbUser.password; 
+
+        }
+      }
+  
       return token;
     },
     async session({ session, user, token }) {
+      session.user.username = token.username as string; // ✅ ใช้ค่าที่อัปเดตล่าสุด
       return {
         ...session,
         user: {
           ...session.user,
           id: token.id as string,
-          name: token.username as string,
+          username: token.username as string,
+          password: token.password as string,
           email: token.email as string,
           role: token.role as string
         }

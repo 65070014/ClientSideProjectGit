@@ -3,6 +3,7 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 import { UserCircle } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { redirect} from "next/navigation";
+import UserAccountnav from "./UserAccountnav";
     
 
 export default function Header() {
@@ -24,7 +25,7 @@ export default function Header() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                             <DropdownMenuItem className="cursor-pointer" onClick={() => redirect("/profile")}>Profile</DropdownMenuItem>
-                            <DropdownMenuItem className="cursor-pointer" onClick={() => ""}>Logout</DropdownMenuItem>
+                            <UserAccountnav />
                         </DropdownMenuContent>
                     </DropdownMenu>
                 ) : (

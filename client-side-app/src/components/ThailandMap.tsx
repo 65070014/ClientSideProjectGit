@@ -12,6 +12,7 @@ import {
 } from "react-simple-maps";
 import {
   calculateRainChance,
+  calculateColor
 } from './ui/Forecast/forecastUtils';
 
 type Props = {
@@ -19,61 +20,6 @@ type Props = {
   tabValue: number;
   setProvince: React.Dispatch<React.SetStateAction<string>>;
   weatherSubOption: string;
-};
-
-
-const calculateColor = (value: number, min: number, max: number, type: string): string => {
-  const normalized = Math.max(min, Math.min(value, max));
-  const scaledValue = (normalized - min) / (max - min); // แปลงเป็นค่า 0-1
-
-  let r, g, b;
-
-  switch (type) {
-    case "Temp":
-      if (scaledValue < 0.5) {
-        // ฟ้า → เหลือง
-        r = Math.round(scaledValue * (255 / 0.5));  // 0 → 255
-        g = 255;
-        b = Math.round(255 - scaledValue * (255 / 0.5)); // 255 → 0
-      } else {
-        // เหลือง → ส้ม
-        r = 255;
-        g = Math.round(255 - (scaledValue - 0.5) * (255 / 0.5)); // 255 → 0
-        b = 0;
-      }
-      break;
-
-    case "PM": // มลพิษ (เขียว → เหลือง → ส้ม → แดง)
-      if (scaledValue < 0.5) {
-        r = Math.round(scaledValue * 510); // 0 → 255 (เขียว → เหลือง)
-        g = 255;
-        b = 0;
-      } else {
-        r = 255;
-        g = Math.round(255 - (scaledValue - 0.5) * 510); // 255 → 0 (เหลือง → แดง)
-        b = 0;
-      }
-      break;
-
-    case "Wind": // ลม (น้ำเงิน → ฟ้าอ่อน)
-      r = 0;
-      g = Math.round(scaledValue * 255);
-      b = 255;
-      break;
-
-    case "Rain": // ฝน (น้ำเงินเข้ม → ฟ้า)
-      r = 0;
-      g = Math.round(scaledValue * 255);
-      b = 255 - g;
-      break;
-
-    case "Humidity": // ความชื้น (ฟ้าเข้ม → ขาว)
-      r = Math.round(scaledValue * 200);
-      g = Math.round(scaledValue * 200);
-      b = 255;
-      break;
-  }
-  return `rgb(${r}, ${g}, ${b})`;
 };
 
 const ThailandMap: React.FC<Props> = ({ tokenweather, weatherSubOption, tabValue, setProvince }) => {
@@ -84,6 +30,7 @@ const ThailandMap: React.FC<Props> = ({ tokenweather, weatherSubOption, tabValue
   const [provincesColorMap, setProvincesColorMap] = useState<{ [key: string]: string[] }>({});
   const [isDataReady, setIsDataReady] = useState(false);
   const [loading_number, setLoadingNumber] = useState<number>(0);
+  const [hoveredRegion, setHoveredRegion] = useState(null);  // To track hovered region
   const provincesGroup1 = provinces.slice(0, 11);
   const provincesGroup2 = provinces.slice(11, 22);
   const provincesGroup3 = provinces.slice(22, 33);
@@ -199,11 +146,7 @@ const ThailandMap: React.FC<Props> = ({ tokenweather, weatherSubOption, tabValue
 
     setProvincesColorMap(prevMap => ({ ...prevMap, ...tempColorMap })); // ✅ อัปเดต state หลัง loop เสร็จ
     console.log("Updated provincesColorMap:", tempColorMap);
-    setLoading(false);
   };
-
-  // ตรวจสอบว่าค่าเปลี่ยนแปลงจริงไหม
-
 
   useEffect(() => {
     console.log(Object.keys(provincesColorMap).length, provinces.length)
@@ -236,7 +179,7 @@ const ThailandMap: React.FC<Props> = ({ tokenweather, weatherSubOption, tabValue
         console.error("Error fetching the JSON:", error);
       }
     };
-
+    setLoading(false);
     fetchThailandTopology();
   }, []);
 
@@ -259,9 +202,9 @@ const ThailandMap: React.FC<Props> = ({ tokenweather, weatherSubOption, tabValue
 
 
   return (
-    <div>
-      {loading || !isDataReady || apiLimit ? (
-        <MapSkeleton apilimit={apiLimit} loading_number={loading_number} />
+    <div className="relative">
+      {loading ? (
+        <MapSkeleton />
       ) : (
         <ComposableMap
           projection="geoMercator"
@@ -282,25 +225,30 @@ const ThailandMap: React.FC<Props> = ({ tokenweather, weatherSubOption, tabValue
               {({ geographies }: { geographies: Feature<Geometry, GeoJsonProperties>[] }) =>
                 geographies.map((geo: Feature<Geometry, GeoJsonProperties>) => {
                   const regionName = geo.properties?.NAME_1;  // ใช้ชื่อจังหวัดจาก properties
-                  const regionColor = provincesColorMap[provinces_eng[regionName]][mapType] || "#88CCEE"; // ถ้าไม่พบสีจะใช้สีเริ่มต้น
+                  const regionColor = isDataReady
+                    ? provincesColorMap[provinces_eng[regionName]][mapType] || "#88CCEE"
+                    : "#88CCEE"; // ใช้สีขาวเมื่อยังไม่โหลดสี
 
                   return (
-                    <Geography
-                      key={geo.rsmKey}
-                      geography={geo}
-                      fill={regionColor} // ใช้สีที่ระบุใน provincesColorMap
-                      stroke="#FFFFFF"
-                      strokeWidth={0.5}
-                      style={{
-                        default: { outline: "none" },
-                        hover: {
-                          fill: "#F53",
-                          outline: "none",
-                          transition: "all 0.3s",
-                        },
-                      }}
-                      onClick={() => setProvince(provinces_eng[regionName])}
-                    />
+                    <React.Fragment key={geo.rsmKey}>
+                      <Geography
+                        geography={geo}
+                        fill={regionColor} // ใช้สีที่ระบุใน provincesColorMap
+                        stroke="#FFFFFF"
+                        strokeWidth={0.5}
+                        style={{
+                          default: { outline: "none" },
+                          hover: {
+                            fill: "#F53",
+                            outline: "none",
+                            transition: "all 0.3s",
+                          },
+                        }}
+                        onClick={() => setProvince(provinces_eng[regionName])}
+                        onMouseEnter={() => setHoveredRegion(regionName)}  // แสดงชื่อจังหวัดเมื่อ hover ถ้าค่า zoom < 3
+                        onMouseLeave={() => setHoveredRegion(null)}  // เลิกแสดงชื่อจังหวัดเมื่อเอาเมาส์ออก
+                      />
+                    </React.Fragment>
                   );
                 })
               }
@@ -308,6 +256,80 @@ const ThailandMap: React.FC<Props> = ({ tokenweather, weatherSubOption, tabValue
           </ZoomableGroup>
         </ComposableMap>
       )}
+
+      {/* แสดงชื่อจังหวัดเมื่อเอาเมาส์ไปชี้ */}
+      {hoveredRegion && (
+        <div className="absolute top-2 left-2 p-4 z-10 bg-white text-black rounded-sm shadow-md">
+          <p className="font-semibold text-xs">{provinces_eng[hoveredRegion]}</p>
+        </div>
+      )}
+
+      {/* แสดงแถบสี */}
+
+      <div className="absolute bottom-4 right-4 z-20 w-full max-w-[150px] mx-auto mt-4">
+        <div
+          className={`relative h-6 rounded-full ${mapType === 0
+              ? "bg-gradient-to-r from-blue-500 via-yellow-400 to-orange-500" // อุณหภูมิ
+              : mapType === 1
+                ? "bg-gradient-to-r from-blue-600 to-blue-300" // ลม
+                : mapType === 2
+                  ? "bg-gradient-to-r from-blue-800 to-blue-400" // ฝน
+                  : mapType === 3
+                    ? "bg-gradient-to-r from-blue-700 to-white" // ความชื้น
+                    : mapType === 4
+                    ? "bg-gradient-to-r from-green-500 via-yellow-400 via-orange-500 to-red-600" // ความชื้น
+                      : "bg-gradient-to-r from-gray-500 to-gray-900" // ค่าเริ่มต้น
+            }`}
+        >
+          <div className="absolute bottom-full left-0 text-xs mb-1 font-medium text-blue-700">
+            {mapType === 0
+              ? "หนาว"
+              : mapType === 1
+                ? "ลมเบา"
+                : mapType === 2
+                  ? "น้อย"
+                  : mapType === 3
+                    ? "แห้ง"
+                    : mapType === 4
+                    ? "น้อย"
+                      : "ต่ำ"}
+          </div>
+          <div className="absolute bottom-full right-0 text-xs mb-1 font-medium text-red-700">
+            {mapType === 0
+              ? "ร้อน"
+              : mapType === 1
+                ? "ลมแรง"
+                : mapType === 2
+                  ? "หนัก"
+                  : mapType === 3
+                    ? "ชื้น"
+                    : mapType === 4
+                    ? "มาก"
+                      : "สูง"}
+          </div>
+        </div>
+      </div>
+
+
+      <div className="absolute top-0 right-0 p-4 z-10 max-w-3xs w-full">
+        {/* ถ้าข้อมูลยังโหลดไม่เสร็จ ให้แสดงข้อความว่า "กำลังโหลดข้อมูลพยากรณ์" พร้อมแสดงสถานะ */}
+        {!isDataReady && !apiLimit ? (
+          <div className="border border-gray-300 rounded-lg p-2 bg-white shadow-md">
+            <p className="font-semibold text-xs">
+              กำลังโหลดข้อมูลพยากรณ์ {loading_number}/77
+            </p>
+          </div>
+        ) : null}
+
+        {/* ถ้ามีการเรียก Api เกินกำหนด ให้แสดงข้อความว่า "ไม่สามารถโหลดข้อมูลได้เนื่องจากเกิน API limit" */}
+        {apiLimit ? (
+          <div className="border border-red-600 rounded-lg p-2 bg-red-100 shadow-md">
+            <p className="font-semibold text-xs text-red-600">
+              ไม่สามารถโหลดข้อมูลพยากรณ์ได้ เนื่องจากมีการเรียกใช้ API เกินกำหนด
+            </p>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 };

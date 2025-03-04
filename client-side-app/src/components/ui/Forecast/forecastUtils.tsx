@@ -144,3 +144,57 @@ export const getSubOptionIcon = (weatherSubOption: string): JSX.Element | null =
             return null
     }
 }
+
+export const calculateColor = (value: number, min: number, max: number, type: string): string => {
+  const normalized = Math.max(min, Math.min(value, max));
+  const scaledValue = (normalized - min) / (max - min); // แปลงเป็นค่า 0-1
+
+  let r, g, b;
+
+  switch (type) {
+    case "Temp":
+      if (scaledValue < 0.5) {
+        // ฟ้า → เหลือง
+        r = Math.round(scaledValue * (255 / 0.5));  // 0 → 255
+        g = 255;
+        b = Math.round(255 - scaledValue * (255 / 0.5)); // 255 → 0
+      } else {
+        // เหลือง → ส้ม
+        r = 255;
+        g = Math.round(255 - (scaledValue - 0.5) * (255 / 0.5)); // 255 → 0
+        b = 0;
+      }
+      break;
+
+    case "PM": // มลพิษ (เขียว → เหลือง → ส้ม → แดง)
+      if (scaledValue < 0.5) {
+        r = Math.round(scaledValue * 510); // 0 → 255 (เขียว → เหลือง)
+        g = 255;
+        b = 0;
+      } else {
+        r = 255;
+        g = Math.round(255 - (scaledValue - 0.5) * 510); // 255 → 0 (เหลือง → แดง)
+        b = 0;
+      }
+      break;
+
+    case "Wind": // ลม (น้ำเงิน → ฟ้าอ่อน)
+      r = 0;
+      g = Math.round(scaledValue * 255);
+      b = 255;
+      break;
+
+    case "Rain": // ฝน (น้ำเงินเข้ม → ฟ้า)
+      r = 0;
+      g = Math.round(scaledValue * 255);
+      b = 255 - g;
+      break;
+
+    case "Humidity": // ความชื้น (ฟ้าเข้ม → ขาว)
+      r = Math.round(scaledValue * 200);
+      g = Math.round(scaledValue * 200);
+      b = 255;
+      break;
+  }
+  return `rgb(${r}, ${g}, ${b})`;
+};

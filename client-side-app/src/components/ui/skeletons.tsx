@@ -58,12 +58,8 @@ export function WeatherSkeleton() {
       </div>
     );
   }
-  type Props = {
-    apilimit: boolean
-    loading_number : number
-  };
 
-  export const MapSkeleton: React.FC<Props> = ({ apilimit, loading_number }) =>{
+  export function MapSkeleton (){
     return (
       <div style={{ width: '100%', height: '420px', backgroundColor: '#f0f0f0', position: 'relative' }}>
         <div
@@ -83,12 +79,32 @@ export function WeatherSkeleton() {
             top: '50%',
             left: '50%',
             transform: 'translate(-50%, -50%)',
-            color: apilimit ? 'red' : '#888', // Change color based on api limit
+            color: '#888', // Change color based on api limit
           }}
         >
-          <span>{apilimit ? 'การเรียก api เกินกำหนด' : `กำลังโหลดแผนที่... ${loading_number}/77`}</span>
+          <span>{`กำลังโหลดแผนที่...`}</span>
         </div>
       </div>
     );
   }
+  const WeatherMetricSkeleton: React.FC = () => {
+    return (
+      <div className="bg-gray-200 rounded-xl p-6 shadow-md flex flex-col items-center justify-center animate-pulse">
+        <div className="mb-4 w-16 h-16 bg-gray-300 rounded-full"></div>
+        <div className="w-24 h-6 bg-gray-300 rounded mb-2"></div>
+        <div className="w-20 h-10 bg-gray-400 rounded"></div>
+        <div className="w-16 h-4 bg-gray-300 rounded mt-1"></div>
+      </div>
+    );
+  };
+  
+ export const WeatherMetricsSkeleton: React.FC = () => {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <WeatherMetricSkeleton />
+        <WeatherMetricSkeleton />
+        <WeatherMetricSkeleton />
+      </div>
+    );
+  };
   

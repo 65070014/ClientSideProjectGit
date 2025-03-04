@@ -18,10 +18,11 @@ type Props = {
   tabValue: number;
   province: string;
   weatherSubOption: string;
+  forecast: WeatherForecastData[]
+  setForecast: React.Dispatch<React.SetStateAction<WeatherForecastData[]>>;
 };
 
-const WeatherForecast: React.FC<Props> = ({ tokenweather, weatherSubOption, tabValue, province }) => {
-  const [forecast, setForecast] = useState<WeatherForecastData[]>([])
+const WeatherForecast: React.FC<Props> = ({ tokenweather, weatherSubOption, tabValue, province, forecast, setForecast }) => {
   const [loadingWeather, setLoadingWeather] = useState<boolean>(true);
   const [loadingPm, setLoadingPm] = useState<boolean>(true);
 
@@ -97,7 +98,7 @@ const WeatherForecast: React.FC<Props> = ({ tokenweather, weatherSubOption, tabV
 
       fetchWeatherData();  // Call the function to fetch weather data
     }
-  }, [tokenweather, province]);
+  }, [tokenweather, province, setForecast]);
 
   useEffect(() => {
     const fetchPmData = async () => {

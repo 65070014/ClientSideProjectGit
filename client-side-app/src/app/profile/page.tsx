@@ -35,7 +35,7 @@ export default function ProfilePage() {
         if (selectedOption === "ฝุ่น" && Number(inputValue) >= 80 && Number(inputValue) <= 120) {
             setWarningMessage(`กรุณาใส่แมสก์ก่อนออกจากบ้านเนื่องจากค่าฝุ่นเกินค่ามาตรฐานในเขตพื้นที่ ${selectedProvince}`);
         } else if (selectedOption === "ฝุ่น" && Number(inputValue) > 120) {
-            setWarningMessage(`กรุณาห้ามออกจากบ้านเนื่องจากค่าฝุ่นเกินค่ามาตรฐานสูงในเขตพื้นที่ ${selectedProvince}`);        
+            setWarningMessage(`กรุณาอย่าออกจากบ้านหากไม่จำเป็น เนื่องจากค่าฝุ่นเกินค่ามาตรฐานสูงในเขตพื้นที่ ${selectedProvince}`);        
         }if (selectedOption === "สภาพอากาศ" && inputValue === "ฝนฟ้าคะนอง" ) {
             setWarningMessage(`กรุณาพกร่มติดตัวในเขตพื้นที่ ${selectedProvince} เนื่องจากกำลังจะมีฝนฟ้าคะนอง`);
         } else if (selectedOption === "สภาพอากาศ" && inputValue === "พายุ" ) {

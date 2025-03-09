@@ -39,7 +39,6 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        // Return user data which will be availabl e in theJWT token
         return { id: user.id, username: user.username ?? "", email: user.email, role: user.role ?? "USER", province: user.province ?? "" };
 
       },
@@ -50,7 +49,6 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
 
-  // Define custom pages if needed
   pages: {
     signIn: "/login",
   }, session: {
@@ -93,7 +91,7 @@ export const authOptions: NextAuthOptions = {
           password: token.password as string,
           email: token.email as string,
           role: token.role as string,
-          province: token.province as string, // ✅ เพิ่ม province ใน session
+          province: token.province as string, 
         }
       };
     },

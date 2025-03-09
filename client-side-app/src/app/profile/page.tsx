@@ -7,6 +7,7 @@ import Header from "@/components/ui/header"
 import SelectProvince from "@/components/SelectProvince";
 import { WeatherForecastData } from "@/components/ui/Forecast/forecastUtils";
 import WeatherForecast from "@/components/WeatherForecast";
+import { provinces } from "@/data/province";
 
 
 
@@ -15,6 +16,8 @@ export default function ProfilePage() {
     const { register, handleSubmit } = useForm();
     const [message, setMessage] = useState("");
     const [selectedOption, setSelectedOption] = useState("");
+    const [selectedProvince, setSelectedProvince] = useState("");
+
     const [inputValue, setInputValue] = useState("");
     const [adminValue, setAdminValue] = useState("");
     const setWarningMessage = useWarningStore((state) => state.setWarningMessage);
@@ -25,15 +28,24 @@ export default function ProfilePage() {
     const [tabValue, setTabValue] = useState<number>(0)
     const [tokenweather, setTokenweather] = useState<string[]>([]);
 
-
-
     const handleSetValue = () => {
         const newValue = `${selectedOption}: ${inputValue}`;
         setAdminValue(newValue);
 
-        if (selectedOption === "ฝุ่น" && Number(inputValue) >= 80) {
-            setWarningMessage("กรุณาใส่แมสก์ก่อนออกจากบ้านเนื่องจากค่าฝุ่นเกินค่ามาตรฐาน");
-        } else {
+        if (selectedOption === "ฝุ่น" && Number(inputValue) >= 80 && Number(inputValue) <= 120) {
+            setWarningMessage(`กรุณาใส่แมสก์ก่อนออกจากบ้านเนื่องจากค่าฝุ่นเกินค่ามาตรฐานในเขตพื้นที่ ${selectedProvince}`);
+        } else if (selectedOption === "ฝุ่น" && Number(inputValue) > 120) {
+            setWarningMessage(`กรุณาห้ามออกจากบ้านเนื่องจากค่าฝุ่นเกินค่ามาตรฐานสูงในเขตพื้นที่ ${selectedProvince}`);        
+        }if (selectedOption === "สภาพอากาศ" && inputValue === "ฝนฟ้าคะนอง" ) {
+            setWarningMessage(`กรุณาพกร่มติดตัวในเขตพื้นที่ ${selectedProvince} เนื่องจากกำลังจะมีฝนฟ้าคะนอง`);
+        } else if (selectedOption === "สภาพอากาศ" && inputValue === "พายุ" ) {
+            setWarningMessage(`กรุณาพกร่มติดตัวและรีบหาที่กำบังในเขตพื้นที่เนื่องจากกำลังจะมีพายุเข้า ${selectedProvince}`);
+        }else if (selectedOption === "สภาพอากาศ" && inputValue === "ร้อน" ) {
+            setWarningMessage(`คาดว่าอุณหภูมิอาจจะสูงขึ้นในเขตพื้นที่ ${selectedProvince}`);
+        }else if (selectedOption === "สภาพอากาศ" && inputValue === "หนาว" ) {
+            setWarningMessage(`คาดว่าอุณหภูมิอาจจะลดต่ำลงในเขตพื้นที่ ${selectedProvince}`);
+        }
+        else {
             setWarningMessage("");
         }
     };
@@ -99,7 +111,7 @@ export default function ProfilePage() {
 
         if (res.ok) {
             setMessage(response.message);
-            await update(); // 🔄 อัปเดต session (ถ้าใช้ JWT อาจต้อง logout)
+            await update(); //อัปเดต session (ถ้าใช้ JWT อาจต้อง logout)
         } else {
             setMessage(response.message);
         }
@@ -168,6 +180,20 @@ export default function ProfilePage() {
                                     <option value="">-- เลือกข้อมูล --</option>
                                     <option value="สภาพอากาศ">สภาพอากาศ</option>
                                     <option value="ฝุ่น">ฝุ่น</option>
+                                </select>
+                            </div>
+
+                            {/* Dropdown เลือกจังหวัด */}
+                            <div className="flex items-center space-x-2 mb-3">
+                                <select
+                                    value={selectedProvince}
+                                    onChange={(e) => setSelectedProvince(e.target.value)}
+                                    className="w-full px-3 py-2 border rounded-lg"
+                                >
+                                    <option value="">Select your province</option>
+                                    {provinces.map((province) => (
+                                        <option key={province} value={province}>{province}</option>
+                                    ))}
                                 </select>
                             </div>
 

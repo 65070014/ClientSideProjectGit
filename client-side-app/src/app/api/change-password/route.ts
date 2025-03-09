@@ -41,6 +41,6 @@ export async function POST(req: NextRequest) {
     data: { password: hashedPassword },
   });
 
-  // 🔴 บังคับให้ Logout โดยเคลียร์ Session
+  //Logout โดยเคลียร์ Session
   return NextResponse.json({ message: "Password updated successfully. Please log in again." }, { status: 200 });
 }

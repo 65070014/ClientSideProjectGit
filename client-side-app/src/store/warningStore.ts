@@ -3,7 +3,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-// สร้าง Zustand store แบบเก็บใน localStorage
+// สร้าง Zustand store 
 interface WarningState {
   warningMessage: string;
   setWarningMessage: (message: string) => void;

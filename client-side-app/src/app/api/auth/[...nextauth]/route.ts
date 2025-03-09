@@ -6,6 +6,7 @@ import { prisma } from "../../../../../prisma/prisma";
 import bcrypt from "bcryptjs";
 
 
+
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
@@ -39,7 +40,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         // Return user data which will be availabl e in theJWT token
-        return { id: user.id, username: user.username ?? "", email: user.email, role: user.role ?? "USER" };
+        return { id: user.id, username: user.username ?? "", email: user.email, role: user.role ?? "USER", province: user.province ?? "" };
 
       },
     }),
@@ -60,9 +61,10 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.username = user.username; // ✅ บันทึก username ใหม่ใน token
+        token.username = user.username; 
         token.role = user.role;
         token.password = user.password; 
+        token.province = user.province; 
       }
   
       // ✅ เช็คว่า token มี user ID ไหม แล้วดึงค่าล่าสุดจาก DB
@@ -72,7 +74,7 @@ export const authOptions: NextAuthOptions = {
         });
   
         if (dbUser) {
-          token.username = dbUser.username; // ✅ อัปเดตค่าล่าสุด
+          token.username = dbUser.username; 
           token.password = dbUser.password; 
 
         }
@@ -81,7 +83,7 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, user, token }) {
-      session.user.username = token.username as string; // ✅ ใช้ค่าที่อัปเดตล่าสุด
+      session.user.username = token.username as string; 
       return {
         ...session,
         user: {
@@ -90,7 +92,8 @@ export const authOptions: NextAuthOptions = {
           username: token.username as string,
           password: token.password as string,
           email: token.email as string,
-          role: token.role as string
+          role: token.role as string,
+          province: token.province as string, // ✅ เพิ่ม province ใน session
         }
       };
     },

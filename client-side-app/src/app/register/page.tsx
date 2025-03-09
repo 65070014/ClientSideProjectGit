@@ -5,27 +5,15 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-
-interface FormData {
-  username: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-}
-
-interface Errors {
-  username?: string;
-  email?: string;
-  password?: string;
-  confirmPassword?: string;
-  api?: string;
-}
+import { provinces } from "@/data/province";
+// รายชื่อจังหวัดตัวอย่าง สามารถเพิ่มหรือแก้ไขได้
 
 const FormSchema = z.object({
   username: z.string().min(1, 'Username is required').max(100),
   email: z.string().min(1, 'Email is required').email('Invalid email'),
-  password: z.string().min(1, 'Password is required').min(8, 'Password must have than 8 characters'),
-  confirmPassword: z.string().min(1, 'Confirm Password is required')
+  password: z.string().min(1, 'Password is required').min(8, 'Password must have at least 8 characters'),
+  confirmPassword: z.string().min(1, 'Confirm Password is required'),
+  province: z.string().min(1, 'Province is required')
 }).refine((data) => data.password === data.confirmPassword, {
   path: ['confirmPassword'],
   message: 'Passwords do not match'
@@ -33,7 +21,7 @@ const FormSchema = z.object({
 
 export default function SignupForm() {
   const router = useRouter();
-
+  
   const { register, handleSubmit, formState: { errors: formErrors } } = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
@@ -41,12 +29,13 @@ export default function SignupForm() {
       email: "",
       password: "",
       confirmPassword: "",
+      province: "", // ค่า default สำหรับจังหวัด
     }
   });
 
-  const [errors, setErrors] = useState<Errors>({});
+  const [errors, setErrors] = useState<{ api?: string }>({});
 
-  const onSubmit = async (formData: FormData) => {
+  const onSubmit = async (formData: z.infer<typeof FormSchema>) => {
     try {
       const response = await fetch("/api/register/", {
         method: "POST",
@@ -106,6 +95,19 @@ export default function SignupForm() {
           />
           {formErrors.confirmPassword && <p className="text-red-500 text-sm">{formErrors.confirmPassword.message}</p>}
 
+          {/* Dropdown สำหรับเลือกจังหวัด */}
+          <select
+            {...register("province")}
+            required
+            className="w-full px-3 py-2 border rounded-lg mb-3 bg-white"
+          >
+            <option value="">Select your province</option>
+            {provinces.map((province) => (
+              <option key={province} value={province}>{province}</option>
+            ))}
+          </select>
+          {formErrors.province && <p className="text-red-500 text-sm">{formErrors.province.message}</p>}
+
           {errors.api && <p className="text-red-500 text-sm">{errors.api}</p>}
 
           <button
@@ -121,7 +123,5 @@ export default function SignupForm() {
         <a href="/login" className="text-gray-400 hover:text-gray-600">Login</a>
       </p>
     </div>
-
-
   );
 }

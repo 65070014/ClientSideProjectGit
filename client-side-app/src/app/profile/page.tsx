@@ -4,6 +4,9 @@ import { useForm } from "react-hook-form";
 import { useEffect, useState } from "react";
 import { useWarningStore } from "../../store/warningStore";
 import Header from "@/components/ui/header"
+import SelectProvince from "@/components/SelectProvince";
+import { WeatherForecastData } from "@/components/ui/Forecast/forecastUtils";
+import WeatherForecast from "@/components/WeatherForecast";
 
 
 
@@ -16,6 +19,12 @@ export default function ProfilePage() {
     const [adminValue, setAdminValue] = useState("");
     const setWarningMessage = useWarningStore((state) => state.setWarningMessage);
     const warningMessage = useWarningStore((state) => state.warningMessage);
+    const [province, setProvince] = useState<string>(session?.user?.province || "Bangkok")
+    const [forecast, setForecast] = useState<WeatherForecastData[]>([])
+    const [weatherSubOption, setWeatherSubOption] = useState<"temperature" | "wind" | "rain" | "humidity">("temperature")
+    const [tabValue, setTabValue] = useState<number>(0)
+    const [tokenweather, setTokenweather] = useState<string[]>([]);
+
 
 
     const handleSetValue = () => {
@@ -59,7 +68,25 @@ export default function ProfilePage() {
 
 
 
+    useEffect(() => {
+        const fetchToken = async () => {
+            try {
+                const response1 = await fetch("/api/weathertoken/");
 
+                if (!response1.ok) {
+                    throw new Error("Failed to fetch token");
+                }
+
+                const result = await response1.json();
+                setTokenweather(result.token);
+            } catch (error) {
+                console.error("Error fetching token:", error);
+            }
+        };
+
+        fetchToken();
+
+    }, []);
 
     async function onSubmitPassword(data: any) {
         const res = await fetch("/api/change-password/", {
@@ -81,42 +108,49 @@ export default function ProfilePage() {
         console.log("Session:", session);
     }, [session]);
     return (
-        <div className="max-w-md mx-auto mt-10 bg-white p-6 rounded-lg shadow-md pt-16 p-4">
+        <div className="w-full pt-16 p-4">
             <Header />
             <h2 className="text-2xl font-semibold text-center ">Profile</h2>
             {session && session.user ? (
                 session.user.role === 'USER' ? (
                     <>
                         <p className="text-center mb-4">Welcome, {session.user.username}!</p>
-                        <form onSubmit={handleSubmit(onSubmit)} className="mt-4">
-                            <input
-                                type="text"
-                                {...register("username")}
-                                defaultValue={session.user.username || ""}
-                                placeholder="Username"
-                                className="w-full px-3 py-2 border rounded-lg mb-3"
-                            />
-                            <button type="submit" className="w-full bg-blue-500 text-white py-2 rounded-lg">
-                                Update Profile
-                            </button>
-                        </form>
-                        <form onSubmit={handleSubmit(onSubmitPassword)} className="mt-4">
-                            <input
-                                type="password"
-                                {...register("currentPassword")}
-                                placeholder="Current Password"
-                                className="w-full px-3 py-2 border rounded-lg mb-3"
-                            />
-                            <input
-                                type="password"
-                                {...register("newPassword")}
-                                placeholder="New Password"
-                                className="w-full px-3 py-2 border rounded-lg mb-3"
-                            />
-                            <button type="submit" className="w-full bg-red-800 text-white py-2 rounded-lg">
-                                Change Password
-                            </button>
-                        </form>
+                        <div style={{ opacity: 0, height: 0, overflow: "hidden" }}>
+                            <WeatherForecast {...{ tokenweather, weatherSubOption, tabValue, province, forecast, setForecast }} />
+                        </div>
+                        <SelectProvince {...{ province, setProvince, forecast }} />
+                        <div className="max-w-md mx-auto mt-10 bg-white p-6 rounded-lg shadow-md pt-16 p-4">
+                            <form onSubmit={handleSubmit(onSubmit)} className="mt-4">
+                                <input
+                                    type="text"
+                                    {...register("username")}
+                                    defaultValue={session.user.username || ""}
+                                    placeholder="Username"
+                                    className="w-full px-3 py-2 border rounded-lg mb-3"
+                                />
+                                <button type="submit" className="w-full bg-blue-500 text-white py-2 rounded-lg">
+                                    Update Profile
+                                </button>
+                            </form>
+                            <form onSubmit={handleSubmit(onSubmitPassword)} className="mt-4">
+                                <input
+                                    type="password"
+                                    {...register("currentPassword")}
+                                    placeholder="Current Password"
+                                    className="w-full px-3 py-2 border rounded-lg mb-3"
+                                />
+                                <input
+                                    type="password"
+                                    {...register("newPassword")}
+                                    placeholder="New Password"
+                                    className="w-full px-3 py-2 border rounded-lg mb-3"
+                                />
+                                <button type="submit" className="w-full bg-red-800 text-white py-2 rounded-lg">
+                                    Change Password
+                                </button>
+                            </form>
+                        </div>
+
                     </>
                 ) : session.user.role === 'ADMIN' ? (
                     <>

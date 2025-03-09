@@ -21,6 +21,7 @@ model User {
   role          String?
   password      String?
   image         String?
+  province      String?
   accounts      Account[]
   sessions      Session[]
   // Optional for WebAuthn support

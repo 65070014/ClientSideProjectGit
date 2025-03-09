@@ -7,6 +7,7 @@ const userSchema = z.object({
     username: z.string().min(1,'Username is required').max(100),
     email: z.string().min(1,'Email is required').email('Invalid email'),
     password: z.string().min(1,'Password is required').min(8,'Password must have than 8 characters'),
+    province: z.string().min(1,'Province is required').max(100,''),
     confirmPassword: z.string().min(1,'Confirm Password is required')
 })
 
@@ -14,7 +15,7 @@ const userSchema = z.object({
 export async function POST(req: Request){
     try {
         const body = await req.json();
-        const {email,username,password} = userSchema.parse(body);
+        const {email,username,password,province} = userSchema.parse(body);
 
         const existingUserByEmail = await prisma.user.findUnique({
             where: {
@@ -31,6 +32,7 @@ export async function POST(req: Request){
                 email, 
                 username, 
                 password: hashedPassword ,
+                province,
                 role: "USER"
             }
         })

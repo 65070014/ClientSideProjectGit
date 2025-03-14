@@ -22,6 +22,7 @@ export default function Home() {
     const fetchToken = async () => {
       try {
         const response1 = await fetch("/api/weathertoken/");
+        
 
         if (!response1.ok) {
           throw new Error("Failed to fetch token");

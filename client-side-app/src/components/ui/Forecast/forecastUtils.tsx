@@ -24,46 +24,41 @@ export const formatter = new Intl.DateTimeFormat('th-TH', {
     month: 'short',
 });
 
-export const calculateRainChance = (rh: number, cloudlow: number, cloudmed: number, cloudhigh: number, tc: number, ws10m: number, rain: number) => {
+export const calculateRainChance = (rh: number, cloud: number, tc: number, ws10m: number) => {
     let chance = 0;
 
+    // ความชื้นสูง (เหนือ 80%) เพิ่มโอกาสฝนตก
     if (rh > 80) {
-        chance += 30;
-    }
-
-    if (cloudlow > 50) {
-        chance += 25;
-    } else if (cloudlow > 30) {
-        chance += 15;
-    }
-
-    if (cloudmed > 50) {
+        chance += 40;
+    } else if (rh > 60) {
         chance += 20;
     }
 
-    if (cloudhigh > 50) {
+    // ปริมาณเมฆเยอะ เพิ่มโอกาสฝนตก
+    if (cloud > 70) {
+        chance += 35;
+    } else if (cloud > 50) {
+        chance += 20;
+    } else if (cloud > 30) {
         chance += 10;
     }
 
+    // อุณหภูมิสูงอาจทำให้ฝนตกง่ายขึ้น
     if (tc > 30) {
         chance += 10;
     } else if (tc < 20) {
         chance -= 5;
     }
 
-    if (ws10m > 10) {
+    // ความเร็วลมมีผลต่อฝน (ลมแรงอาจนำพาฝนมา)
+    if (ws10m > 15) {
+        chance += 10;
+    } else if (ws10m > 10) {
         chance += 5;
     }
 
-    if (rain > 10) {
-        chance += 50;
-    }
-
-
-    // Make sure the chance is within 0-100 range
-    chance = Math.min(100, Math.max(0, chance));
-
-    return chance;
+    // จำกัดค่าให้อยู่ระหว่าง 0-100%
+    return Math.min(100, Math.max(0, chance));
 };
 
 export function revertThaiDateToNormalDate(thaiFormattedDate: string): string {
@@ -198,3 +193,46 @@ export const calculateColor = (value: number, min: number, max: number, type: st
   }
   return `rgb(${r}, ${g}, ${b})`;
 };
+
+export async function saveMap(mapData:{ [province: string]: string[] }) {
+    try {
+      const response = await fetch('/api/savedmap/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(mapData),
+      });
+  
+      if (response.ok) {
+        console.log(response);
+      } else {
+        console.error('Failed to update map');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  }
+
+  export async function getMap() {
+    try {
+      const response = await fetch('/api/savedmap', {
+        method: 'GET', // Use GET method to retrieve data
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+  
+      if (response.ok) {
+        const mapData = await response.json(); // Parse JSON response
+        console.log(mapData); // Handle the retrieved map data
+        return mapData;
+      } else {
+        console.error('Failed to fetch map data');
+        return null;
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      return null;
+    }
+  }

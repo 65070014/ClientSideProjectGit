@@ -87,3 +87,9 @@ model Authenticator {
  
   @@unique([userId, credentialID])
 }
+
+model MapSaved {
+  id                  String   @id @default(auto()) @map("_id") @db.ObjectId
+  provincesColorMap   Json     
+  time                DateTime @updatedAt // เก็บเวลาเมื่อบันทึก
+}

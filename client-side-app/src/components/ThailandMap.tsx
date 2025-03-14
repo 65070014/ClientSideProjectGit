@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { MapSkeleton } from "@/components/ui/skeletons";
 import { Feature, FeatureCollection, Geometry, GeoJsonProperties } from "geojson";
-import { provinces, provinces_eng } from '../data/province';
+import { provinces, provinces_eng, provinces_attitude } from '../data/province';
 import {
   ComposableMap,
   Geographies,
@@ -12,7 +12,9 @@ import {
 } from "react-simple-maps";
 import {
   calculateRainChance,
-  calculateColor
+  calculateColor,
+  saveMap,
+  getMap
 } from './ui/Forecast/forecastUtils';
 
 type Props = {
@@ -29,61 +31,35 @@ const ThailandMap: React.FC<Props> = ({ tokenweather, weatherSubOption, tabValue
   const [apiLimit, setApiLimit] = useState<boolean>(false);
   const [provincesColorMap, setProvincesColorMap] = useState<{ [key: string]: string[] }>({});
   const [isDataReady, setIsDataReady] = useState(false);
+  const [isHour, setIsHour] = useState(false);
+  const [mapTime, setMapTime] = useState<Date | null>(null);
   const [loading_number, setLoadingNumber] = useState<number>(0);
   const [hoveredRegion, setHoveredRegion] = useState(null);  // To track hovered region
-  const provincesGroup1 = provinces.slice(0, 11);
-  const provincesGroup2 = provinces.slice(11, 22);
-  const provincesGroup3 = provinces.slice(22, 33);
-  const provincesGroup4 = provinces.slice(33, 44);
-  const provincesGroup5 = provinces.slice(44, 55);
-  const provincesGroup6 = provinces.slice(55, 66);
-  const provincesGroup7 = provinces.slice(66);
-  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+
 
   // ฟังก์ชันเพื่อเรียก API สำหรับแต่ละจังหวัด
-  const fetchWeatherData = async (province: string, apiKey: string) => {
+  const fetchWeatherData = async (province: string) => {
 
     try {
-      await delay(7000)
-      const now = new Date();
-      const forecastDate = new Date(now);
-      forecastDate.setDate(now.getDate());
-      forecastDate.setUTCHours(forecastDate.getUTCHours() + 4);
-
-      // Start time
-      const forecastDateStr = forecastDate.toISOString().split(".")[0];
-      const dateAndHour = forecastDateStr.slice(0, 13);
-
-      // End time (เพิ่ม 4 ชั่วโมง)
-      const endDate = new Date(forecastDate);
-      endDate.setUTCHours(endDate.getUTCHours() + 4);
-      const endDateStr = endDate.toISOString().split(".")[0];
-      const endDateAndHour = endDateStr.slice(0, 13);
-
-      const weatherAPI = `https://data.tmd.go.th/nwpapi/v1/forecast/area/place?domain=1&province=${province}&fields=tc,rh,cond,ws10m,cloudlow,cloudmed,cloudhigh,rain&starttime=${dateAndHour}:00:00&endtime=${endDateAndHour}:00:00`;
       try {
         // Call the API with the specific date
-        const response2 = await fetch(weatherAPI, {
-          headers: {
-            "Access-Control-Allow-Origin": "*",
-            "accept": "application/json",
-            "authorization": `Bearer ${apiKey}`,
-          }
-        });
+        const lat = provinces_attitude[province][0]
+        const lon = provinces_attitude[province][1]
+        console.log(province)
+
+        const response2 = await fetch(`/api/weathermap?lat=${lat}&lon=${lon}`)
 
         if (response2.ok) {
           const data = await response2.json();
-          const forecast = data.WeatherForecasts[0].forecasts[0].data;
 
           const weatherData = {
-            Temp: forecast.tc,
-            Wind: forecast.ws10m,
-            Rain: calculateRainChance(forecast.rh, forecast.cloudlow, forecast.cloudmed, forecast.cloudhigh, forecast.tc, forecast.ws10m, forecast.rain),
-            Humidity: forecast.rh,
+            Temp: data.current.temp,
+            Wind: data.current.wind_speed,
+            Rain: calculateRainChance(data.current.humidity, data.current.clouds, data.current.temp, data.current.wind_speed),
+            Humidity: data.current.humidity,
           };
           setLoadingNumber(prev => prev + 1)
-          const lat = data.WeatherForecasts[0].location.lat
-          const lon = data.WeatherForecasts[0].location.lon
           const response2Pm = await fetch(`/api/pmdata?lat=${lat}&lon=${lon}`);
 
           const pmdata = await response2Pm.json();
@@ -114,14 +90,14 @@ const ThailandMap: React.FC<Props> = ({ tokenweather, weatherSubOption, tabValue
   const fetchAllWeatherData = async () => {
     const tempColorMap: { [key: string]: string[] } = {}; // สร้าง object ใหม่
 
-    const fetchGroupData = async (provinceList: string[], apiKey: string) => {
+    const fetchGroupData = async (provinceList: string[]) => {
       for (const province of provinceList) {
         if (apiLimit) {
           console.log("API limit reached, stopping requests.");
           break;
         }
 
-        const data = await fetchWeatherData(province, apiKey);
+        const data = await fetchWeatherData(province);
         if (data) {
           tempColorMap[province] = [
             calculateColor(data.Temp, 0, 60, "Temp"),
@@ -133,16 +109,19 @@ const ThailandMap: React.FC<Props> = ({ tokenweather, weatherSubOption, tabValue
         }
       }
     };
+    const map = await getMap()
+    const maptime = new Date(map.times);
 
-    await Promise.all([
-      fetchGroupData(provincesGroup1, tokenweather[1]),
-      fetchGroupData(provincesGroup2, tokenweather[2]),
-      fetchGroupData(provincesGroup3, tokenweather[3]),
-      fetchGroupData(provincesGroup4, tokenweather[4]),
-      fetchGroupData(provincesGroup5, tokenweather[5]),
-      fetchGroupData(provincesGroup6, tokenweather[6]),
-      fetchGroupData(provincesGroup7, tokenweather[7]),
-    ]);
+    const currentTime = new Date();
+
+    if (currentTime.getTime() - maptime.getTime() >= 3600000) {
+      setIsHour(true)
+      await fetchGroupData(provinces)
+    } else {
+      setProvincesColorMap(map.provincesColorMap)
+      setMapTime(new Date(map.times))
+    }
+
 
     setProvincesColorMap(prevMap => ({ ...prevMap, ...tempColorMap })); // ✅ อัปเดต state หลัง loop เสร็จ
     console.log("Updated provincesColorMap:", tempColorMap);
@@ -151,8 +130,14 @@ const ThailandMap: React.FC<Props> = ({ tokenweather, weatherSubOption, tabValue
   useEffect(() => {
     console.log(Object.keys(provincesColorMap).length, provinces.length)
     if (Object.keys(provincesColorMap).length === provinces.length) {
+      if (isHour) {
+        saveMap(provincesColorMap)
+        setMapTime(new Date());
+        setIsHour(false)
+      }
       setIsDataReady(true);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [provincesColorMap]);
 
   // เรียกใช้งาน fetchAllWeatherData เมื่อคอมโพเนนต์โหลด
@@ -269,16 +254,16 @@ const ThailandMap: React.FC<Props> = ({ tokenweather, weatherSubOption, tabValue
       <div className="absolute bottom-4 right-4 z-20 w-full max-w-[150px] mx-auto mt-4">
         <div
           className={`relative h-6 rounded-full ${mapType === 0
-              ? "bg-gradient-to-r from-blue-500 via-yellow-400 to-orange-500" // อุณหภูมิ
-              : mapType === 1
-                ? "bg-gradient-to-r from-blue-600 to-blue-300" // ลม
-                : mapType === 2
-                  ? "bg-gradient-to-r from-blue-800 to-blue-400" // ฝน
-                  : mapType === 3
-                    ? "bg-gradient-to-r from-blue-700 to-white" // ความชื้น
-                    : mapType === 4
+            ? "bg-gradient-to-r from-blue-500 via-yellow-400 to-orange-500" // อุณหภูมิ
+            : mapType === 1
+              ? "bg-gradient-to-r from-blue-600 to-blue-300" // ลม
+              : mapType === 2
+                ? "bg-gradient-to-r from-blue-800 to-blue-400" // ฝน
+                : mapType === 3
+                  ? "bg-gradient-to-r from-blue-700 to-white" // ความชื้น
+                  : mapType === 4
                     ? "bg-gradient-to-r from-green-500 via-yellow-400 via-orange-500 to-red-600" // ความชื้น
-                      : "bg-gradient-to-r from-gray-500 to-gray-900" // ค่าเริ่มต้น
+                    : "bg-gradient-to-r from-gray-500 to-gray-900" // ค่าเริ่มต้น
             }`}
         >
           <div className="absolute bottom-full left-0 text-xs mb-1 font-medium text-blue-700">
@@ -291,7 +276,7 @@ const ThailandMap: React.FC<Props> = ({ tokenweather, weatherSubOption, tabValue
                   : mapType === 3
                     ? "แห้ง"
                     : mapType === 4
-                    ? "น้อย"
+                      ? "น้อย"
                       : "ต่ำ"}
           </div>
           <div className="absolute bottom-full right-0 text-xs mb-1 font-medium text-red-700">
@@ -304,7 +289,7 @@ const ThailandMap: React.FC<Props> = ({ tokenweather, weatherSubOption, tabValue
                   : mapType === 3
                     ? "ชื้น"
                     : mapType === 4
-                    ? "มาก"
+                      ? "มาก"
                       : "สูง"}
           </div>
         </div>
@@ -319,7 +304,11 @@ const ThailandMap: React.FC<Props> = ({ tokenweather, weatherSubOption, tabValue
               กำลังโหลดข้อมูลพยากรณ์ {loading_number}/77
             </p>
           </div>
-        ) : null}
+        ) : <div className="border border-gray-300 rounded-lg p-2 bg-white shadow-md">
+          <p className="font-semibold text-xs">
+            ข้อมูล ณ เวลา {mapTime ? mapTime.toLocaleString() : '00'}
+          </p>
+        </div>}
 
         {/* ถ้ามีการเรียก Api เกินกำหนด ให้แสดงข้อความว่า "ไม่สามารถโหลดข้อมูลได้เนื่องจากเกิน API limit" */}
         {apiLimit ? (

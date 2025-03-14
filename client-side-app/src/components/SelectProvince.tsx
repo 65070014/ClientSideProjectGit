@@ -1,9 +1,9 @@
 "use client"
 
 import React, { useState, useEffect } from "react";
-import { Typography, Select, MenuItem, FormControl } from "@mui/material"
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
-import { provinces } from '../data/province';
+import { Typography, FormControl, TextField, Autocomplete } from "@mui/material"
+import { postal_code } from '../data/province';
+import { createFilterOptions } from '@mui/material/Autocomplete';
 import { Thermometer, Wind, CloudRain } from "lucide-react";
 import { WeatherForecastData } from '../components/ui/Forecast/forecastUtils';
 import { WeatherMetricsSkeleton } from "@/components/ui/skeletons";
@@ -14,13 +14,14 @@ type Props = {
   forecast: WeatherForecastData[]
 };
 
+interface Postal {
+  label: string;
+  postalCode: string[];
+}
 
 const ProvinceSelector: React.FC<Props> = ({ province, setProvince, forecast }) => {
   const [loading, setLoading] = useState<boolean>(true);
   // Handle change event for province selection
-  const handleChange = (event: React.ChangeEvent<{ value: unknown }>) => {
-    setProvince(event.target.value as string)
-  }
 
   interface WeatherMetricProps {
     icon: React.ReactNode
@@ -47,6 +48,11 @@ const ProvinceSelector: React.FC<Props> = ({ province, setProvince, forecast }) 
     }
   }, [forecast]);
 
+  const filterOptions = createFilterOptions<Postal>({
+    matchFrom: 'any',
+    stringify: (option) => `${option.label} ${option.postalCode.join(' ')}`,
+  });
+
   const WeatherMetric: React.FC<WeatherMetricProps> = ({ icon, title, value, unit, bgColor }) => {
     return (
       <div className={`${bgColor} rounded-xl p-6 shadow-md flex flex-col items-center justify-center`}>
@@ -66,7 +72,24 @@ const ProvinceSelector: React.FC<Props> = ({ province, setProvince, forecast }) 
       <div>
         <Typography variant="h4" align="center" className="mb-4 ">
           <FormControl variant="outlined" className="ml-2">
-            <Select
+
+            <Autocomplete
+              className="mb-4"
+              disablePortal
+              disableClearable
+              options={postal_code}
+              value={postal_code.find((item) => item.label === province)}
+              getOptionLabel={(option) => option.label}
+              filterOptions={filterOptions}
+
+              onChange={(event: any, newValue: string) => {
+                setProvince(newValue.label);
+              }}
+              sx={{ width: 300 }}
+              renderInput={(params) => <TextField {...params} label="จังหวัด/รหัสไปรษณีย์" />}
+            />
+
+            {/* <Select
               className="mb-4"
               value={province}
               onChange={handleChange}
@@ -81,7 +104,7 @@ const ProvinceSelector: React.FC<Props> = ({ province, setProvince, forecast }) 
                   {prov}
                 </MenuItem>
               ))}
-            </Select>
+            </Select> */}
           </FormControl>
         </Typography>
       </div>

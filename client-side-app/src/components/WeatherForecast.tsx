@@ -51,43 +51,52 @@ const WeatherForecast: React.FC<Props> = ({ tokenweather, weatherSubOption, tabV
             const endDateStr = endDate.toISOString().split(".")[0];
             const endDateAndHour = endDateStr.slice(0, 13);
 
-            const weatherAPI = `https://data.tmd.go.th/nwpapi/v1/forecast/area/place?domain=1&province=${province}&fields=tc,rh,cond,ws10m,cloudlow,cloudmed,cloudhigh,rain&starttime=${dateAndHour}:00:00&endtime=${endDateAndHour}:00:00`;
+            let tokenIndex = 0;
+            let success = false;
 
-            try {
-              // Call the API with the specific date
-              const response2 = await fetch(weatherAPI, {
-                headers: {
-                  "Access-Control-Allow-Origin": "*",
-                  "accept": "application/json",
-                  "authorization": `Bearer ${tokenweather[0]}`,
+            // Try to fetch data with different tokens
+            while (!success && tokenIndex < tokenweather.length) {
+              const weatherAPI = `https://data.tmd.go.th/nwpapi/v1/forecast/area/place?domain=1&province=${province}&fields=tc,rh,cond,ws10m,cloudmed&starttime=${dateAndHour}:00:00&endtime=${endDateAndHour}:00:00`;
+
+              try {
+                // Call the API with the specific token
+                const response2 = await fetch(weatherAPI, {
+                  headers: {
+                    "Access-Control-Allow-Origin": "*",
+                    "accept": "application/json",
+                    "authorization": `Bearer ${tokenweather[tokenIndex]}`,
+                  }
+                });
+
+                if (response2.ok) {
+                  const data = await response2.json();
+                  const forecast = data.WeatherForecasts[0].forecasts[0].data;
+
+                  const forecastItem: WeatherForecastData = {
+                    date: formatter.format(new Date(forecastDateStr)),
+                    temperature: forecast.tc,
+                    humidity: forecast.rh,
+                    windSpeed: forecast.ws10m,
+                    rainChance: calculateRainChance(forecast.rh, forecast.cloudmed, forecast.tc, forecast.ws10m),
+                    pm25: 0,
+                    weather: forecast.cond,
+                    lat: data.WeatherForecasts[0].location.lat,
+                    lon: data.WeatherForecasts[0].location.lon
+                  };
+
+                  forecastData.push(forecastItem);
+                  success = true;  // If successful, set success to true to stop trying other tokens
+                } else {
+                  throw new Error("API response not ok");
                 }
-              });
-
-              if (response2.ok) {
-                const data = await response2.json();
-                const forecast = data.WeatherForecasts[0].forecasts[0].data;
-
-                const forecastItem: WeatherForecastData = {
-                  date: formatter.format(new Date(forecastDateStr)),
-                  temperature: forecast.tc,
-                  humidity: forecast.rh,
-                  windSpeed: forecast.ws10m,
-                  rainChance: calculateRainChance(forecast.rh, forecast.cloudlow, forecast.cloudmed, forecast.cloudhigh, forecast.tc, forecast.ws10m, forecast.rain),
-                  pm25: 0,
-                  weather: forecast.cond,
-                  lat: data.WeatherForecasts[0].location.lat,
-                  lon: data.WeatherForecasts[0].location.lon
-                };
-
-                forecastData.push(forecastItem);
-              } else {
-                throw new Error("API response not ok");
+              } catch (error) {
+                console.error("Error fetching weather data:", error);
+                tokenIndex++;  // Move to the next token if current token fails
               }
-            } catch (error) {
-              console.error("Error fetching weather data:", error);
             }
           }
 
+          // Set forecast data once after all API calls are finished
           setForecast(forecastData);
         } catch (error) {
           console.error("Error fetching weather data:", error);
@@ -99,6 +108,7 @@ const WeatherForecast: React.FC<Props> = ({ tokenweather, weatherSubOption, tabV
       fetchWeatherData();  // Call the function to fetch weather data
     }
   }, [tokenweather, province, setForecast]);
+
 
   useEffect(() => {
     const fetchPmData = async () => {

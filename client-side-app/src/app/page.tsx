@@ -18,6 +18,7 @@ export default function Home() {
   const [forecast, setForecast] = useState<WeatherForecastData[]>([])
   const warningMessage = useWarningStore((state) => state.warningMessage);
 
+  //ดึงโทเคนสำหรับ API
   useEffect(() => {
     const fetchToken = async () => {
       try {

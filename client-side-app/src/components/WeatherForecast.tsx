@@ -25,7 +25,8 @@ type Props = {
 const WeatherForecast: React.FC<Props> = ({ tokenweather, weatherSubOption, tabValue, province, forecast, setForecast }) => {
   const [loadingWeather, setLoadingWeather] = useState<boolean>(true);
   const [loadingPm, setLoadingPm] = useState<boolean>(true);
-
+  
+  //เรียกข้อมูล API พยากรณ์อากาศ ทุกครั้งที่จังหวัดเปลื่ยน
   useEffect(() => {
     if (tokenweather !== undefined && tokenweather !== null && tokenweather.length > 0) {
       const forecastData: WeatherForecastData[] = [];
@@ -54,7 +55,7 @@ const WeatherForecast: React.FC<Props> = ({ tokenweather, weatherSubOption, tabV
             let tokenIndex = 0;
             let success = false;
 
-            // Try to fetch data with different tokens
+            // ลูปเปลื่ยน โทเคน หากโทเคนที่ใช้มีปัญหา จนกว่าจะดึงข้อมูลสำเร็จ
             while (!success && tokenIndex < tokenweather.length) {
               const weatherAPI = `https://data.tmd.go.th/nwpapi/v1/forecast/area/place?domain=1&province=${province}&fields=tc,rh,cond,ws10m,cloudmed&starttime=${dateAndHour}:00:00&endtime=${endDateAndHour}:00:00`;
 
@@ -109,7 +110,7 @@ const WeatherForecast: React.FC<Props> = ({ tokenweather, weatherSubOption, tabV
     }
   }, [tokenweather, province, setForecast]);
 
-
+  //เมื่อข้อมูลพยากรณ์ถูกเรียกสำเร็จนำค่า latitude longitude มาเรียกข้อมูล API ฝุ่น
   useEffect(() => {
     const fetchPmData = async () => {
       if (forecast.length > 0) {

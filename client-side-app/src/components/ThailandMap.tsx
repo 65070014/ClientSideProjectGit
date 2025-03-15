@@ -109,6 +109,8 @@ const ThailandMap: React.FC<Props> = ({ tokenweather, weatherSubOption, tabValue
         }
       }
     };
+
+    //ดู map ที่ถูกเก็บไว้ใน Database ถ้าอายุไม่ถึง 1 ชั่วโมง ไม่ต้องเรียก API ใหม่ใช้ Map ใน Database
     const map = await getMap()
     const maptime = new Date(map.times);
 
@@ -149,6 +151,7 @@ const ThailandMap: React.FC<Props> = ({ tokenweather, weatherSubOption, tabValue
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tokenweather]);
 
+  //ดึงข้อมูลโครงแผนที่ประเทศไทยแต่ละจังหวัด
   useEffect(() => {
     setLoading(true);
 
@@ -168,6 +171,7 @@ const ThailandMap: React.FC<Props> = ({ tokenweather, weatherSubOption, tabValue
     fetchThailandTopology();
   }, []);
 
+  //ระบุเมนูที่เลือก
   useEffect(() => {
     if (tabValue != 1) {
       if (weatherSubOption == "temperature") {
@@ -211,8 +215,8 @@ const ThailandMap: React.FC<Props> = ({ tokenweather, weatherSubOption, tabValue
                 geographies.map((geo: Feature<Geometry, GeoJsonProperties>) => {
                   const regionName = geo.properties?.NAME_1;  // ใช้ชื่อจังหวัดจาก properties
                   const regionColor = isDataReady
-                    ? provincesColorMap[provinces_eng[regionName]][mapType] || "#88CCEE"
-                    : "#88CCEE"; // ใช้สีขาวเมื่อยังไม่โหลดสี
+                    ? provincesColorMap[provinces_eng[regionName]][mapType] || "#88CCEE" //ดึงสีมาแสดง
+                    : "#88CCEE";
 
                   return (
                     <React.Fragment key={geo.rsmKey}>
@@ -230,7 +234,7 @@ const ThailandMap: React.FC<Props> = ({ tokenweather, weatherSubOption, tabValue
                           },
                         }}
                         onClick={() => setProvince(provinces_eng[regionName])}
-                        onMouseEnter={() => setHoveredRegion(regionName)}  // แสดงชื่อจังหวัดเมื่อ hover ถ้าค่า zoom < 3
+                        onMouseEnter={() => setHoveredRegion(regionName)}  // แสดงชื่อจังหวัดเมื่อ hover 
                         onMouseLeave={() => setHoveredRegion(null)}  // เลิกแสดงชื่อจังหวัดเมื่อเอาเมาส์ออก
                       />
                     </React.Fragment>
@@ -297,6 +301,7 @@ const ThailandMap: React.FC<Props> = ({ tokenweather, weatherSubOption, tabValue
 
 
       <div className="absolute top-0 right-0 p-4 z-10 max-w-3xs w-full">
+        
         {/* ถ้าข้อมูลยังโหลดไม่เสร็จ ให้แสดงข้อความว่า "กำลังโหลดข้อมูลพยากรณ์" พร้อมแสดงสถานะ */}
         {!isDataReady && !apiLimit ? (
           <div className="border border-gray-300 rounded-lg p-2 bg-white shadow-md">

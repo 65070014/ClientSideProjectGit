@@ -21,7 +21,6 @@ interface Postal {
 
 const ProvinceSelector: React.FC<Props> = ({ province, setProvince, forecast }) => {
   const [loading, setLoading] = useState<boolean>(true);
-  // Handle change event for province selection
 
   interface WeatherMetricProps {
     icon: React.ReactNode
@@ -34,13 +33,13 @@ const ProvinceSelector: React.FC<Props> = ({ province, setProvince, forecast }) 
     setLoading(true)
   }, [province]);
 
+  //delay รอ ข้อมูล forecast ให้มีค่าก่อนจริงๆ 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
 
-      // ให้รอให้ forecast มีค่า (ถ้าคุณมีฟังก์ชัน async อื่นๆ ที่ต้องรอ)
+      // ให้รอให้ forecast
       await new Promise(resolve => setTimeout(resolve, 2000));
-
       setLoading(false);
     };
     if (forecast) {
@@ -48,6 +47,7 @@ const ProvinceSelector: React.FC<Props> = ({ province, setProvince, forecast }) 
     }
   }, [forecast]);
 
+  //Serch เลขไปรษณีย์ แล้วแสดงจังหวัดนั้นๆ
   const filterOptions = createFilterOptions<Postal>({
     matchFrom: 'any',
     stringify: (option) => `${option.label} ${option.postalCode.join(' ')}`,
@@ -88,23 +88,6 @@ const ProvinceSelector: React.FC<Props> = ({ province, setProvince, forecast }) 
               sx={{ width: 300 }}
               renderInput={(params) => <TextField {...params} label="จังหวัด/รหัสไปรษณีย์" />}
             />
-
-            {/* <Select
-              className="mb-4"
-              value={province}
-              onChange={handleChange}
-              displayEmpty
-              IconComponent={ArrowDropDownIcon}
-              inputProps={{
-                'aria-label': 'Province selector'
-              }}
-            >
-              {provinces.map((prov) => (
-                <MenuItem key={prov} value={prov}>
-                  {prov}
-                </MenuItem>
-              ))}
-            </Select> */}
           </FormControl>
         </Typography>
       </div>
